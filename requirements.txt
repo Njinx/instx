@@ -1,5 +1,6 @@
 certifi==2021.10.8
 charset-normalizer==2.0.12
+icmplib==3.0.3
 idna==3.3
 ipaddress==1.0.23
 mypy==0.942
