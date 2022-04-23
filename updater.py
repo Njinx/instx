@@ -6,6 +6,10 @@ import config
 import requests
 import os
 import json
+from utils import json_keys_exists_or_x, LatencyResponse
+import utils
+import asyncio
+import the_judge as judge
 
 # "searxng": "required"|"forbidden"|"impartial"
 _DEFAULT_CRITERIA: str = """
@@ -23,19 +27,6 @@ _DEFAULT_CRITERIA: str = """
 _CRITERIA_FPATH = "./criteria.json"
 
 _last_run_time: int = 0
-
-# TODO: Refactor this
-def _keys_exists_or_x(obj, x, keys):
-    if keys[0] not in obj:
-        return x
-
-    if len(keys) == 1:
-        if keys[0] in obj:
-            return obj[keys[0]]
-        else:
-            return x
-    else:
-        return _keys_exists_or_x(obj[keys[0]], x, keys[1:])
 
 class Criteria():
     def __init__(
@@ -67,14 +58,14 @@ class Criteria():
         with open(file_path, "r") as fp:
             raw_json = json.load(fp)
 
-        minimum_csp_grade = _keys_exists_or_x(raw_json, "A", ["minimum_csp_grade"])
-        minimum_tls_grade = _keys_exists_or_x(raw_json, "A", ["minimum_tls_grade"])
-        allowed_http_grades = _keys_exists_or_x(
+        minimum_csp_grade = json_keys_exists_or_x(raw_json, "A", ["minimum_csp_grade"])
+        minimum_tls_grade = json_keys_exists_or_x(raw_json, "A", ["minimum_tls_grade"])
+        allowed_http_grades = json_keys_exists_or_x(
             raw_json, ["V", "F", "C"], ["allowed_http_grades"])
-        allow_analytics = _keys_exists_or_x(raw_json, False, ["allow_analytics"])
-        is_onion = _keys_exists_or_x(raw_json, False, ["is_onion"])
-        require_dnssec = _keys_exists_or_x(raw_json, False, ["require_dnssec"])
-        searxng_preference = _keys_exists_or_x(raw_json, "impartial", ["searxng_preference"])
+        allow_analytics = json_keys_exists_or_x(raw_json, False, ["allow_analytics"])
+        is_onion = json_keys_exists_or_x(raw_json, False, ["is_onion"])
+        require_dnssec = json_keys_exists_or_x(raw_json, False, ["require_dnssec"])
+        searxng_preference = json_keys_exists_or_x(raw_json, "impartial", ["searxng_preference"])
 
         return Criteria(
             minimum_csp_grade,
@@ -147,13 +138,13 @@ class Instances():
             ## check for criteria
             #if "grade" in inst_val["http"]:
             #    print(inst_val["http"]["grade"], file=sys.stderr)
-            csp_grade: str = _keys_exists_or_x(inst_val, "F", ["http", "grade"])
-            tls_grade: str = _keys_exists_or_x(inst_val, "F", ["tls", "grade"])
-            http_grade: str = _keys_exists_or_x(inst_val, "", ["html", "grade"])
-            has_analytics = _keys_exists_or_x(inst_val, True, ["analytics"])
-            is_onion = (_keys_exists_or_x(inst_val, "", ["network_type"]).lower() == "tor")
-            has_dnssec = _keys_exists_or_x(inst_val, False, ["network", "dnssec"])
-            searx_fork = _keys_exists_or_x(inst_val, "", ["generator"]).lower()
+            csp_grade: str = json_keys_exists_or_x(inst_val, "F", ["http", "grade"])
+            tls_grade: str = json_keys_exists_or_x(inst_val, "F", ["tls", "grade"])
+            http_grade: str = json_keys_exists_or_x(inst_val, "", ["html", "grade"])
+            has_analytics = json_keys_exists_or_x(inst_val, True, ["analytics"])
+            is_onion = (json_keys_exists_or_x(inst_val, "", ["network_type"]).lower() == "tor")
+            has_dnssec = json_keys_exists_or_x(inst_val, False, ["network", "dnssec"])
+            searx_fork = json_keys_exists_or_x(inst_val, "", ["generator"]).lower()
 
             if Criteria.school_scale_to_int(csp_grade) \
             < Criteria.school_scale_to_int(Instances._required_criteria.minimum_csp_grade):
@@ -180,13 +171,13 @@ class Instances():
             self.instance_list.append(Instance(
                 url = inst_key,
                 timings = Timings(
-                    initial = _keys_exists_or_x(
+                    initial = json_keys_exists_or_x(
                         inst_val["timing"], -1.0, ["initial", "all", "value"]),
-                    search = _keys_exists_or_x(
+                    search = json_keys_exists_or_x(
                         inst_val["timing"], -1.0, ["search", "all", "median"]),
-                    google = _keys_exists_or_x(
+                    google = json_keys_exists_or_x(
                         inst_val["timing"], -1.0, ["search_go", "all", "median"]),
-                    wikipedia = _keys_exists_or_x(
+                    wikipedia = json_keys_exists_or_x(
                         inst_val["timing"], -1.0, ["search_wp", "all", "median"]),
                 )
             ))
@@ -223,53 +214,6 @@ class Instances():
     def __str__(self) -> str:
         return "{{\n{}\n}}".format(",\n".join(str(inst) for inst in self.instance_list))
 
-class Canidate():
-    def __init__(self, instance: Instance, score: float):
-        self.instance = instance
-        self.score = score
-
-    def __str__(self) -> str:
-        return "[{}] {}".format(self.score, self.instance)
-
-def find_canidates(instances: Instances) -> list[Canidate]:
-    timing_avgs = instances.get_timing_avgs()
-    
-    canidate_list: list[Canidate] = []
-    for inst in instances.instance_list:
-        if not isinstance(inst.timings.initial, float) \
-        or float(inst.timings.initial) * config.INITIAL_RESP_WEIGHT \
-        > timing_avgs.initial * config.OUTLIER_MULTIPLIER \
-        or float(inst.timings.initial) < 0:
-            continue
-        if not isinstance(inst.timings.search, float) \
-        or float(inst.timings.search) * config.SEARCH_RESP_WEIGHT \
-        > timing_avgs.search * config.OUTLIER_MULTIPLIER \
-        or float(inst.timings.search) < 0:
-            continue
-        if not isinstance(inst.timings.google, float) \
-        or float(inst.timings.google) * config.GOOGLE_SEARCH_RESP_WEIGHT \
-        > timing_avgs.google * config.OUTLIER_MULTIPLIER \
-        or float(inst.timings.google) < 0:
-            continue
-        if not isinstance(inst.timings.wikipedia, float) \
-        or float(inst.timings.wikipedia) * config.WIKIPEDIA_SEARCH_RESP_WEIGHT \
-        > timing_avgs.wikipedia * config.OUTLIER_MULTIPLIER \
-        or float(inst.timings.wikipedia) < 0:
-            continue
-
-        score = float(inst.timings.initial) * 1/(config.INITIAL_RESP_WEIGHT) \
-            + float(inst.timings.search) * 1/(config.SEARCH_RESP_WEIGHT) \
-            + float(inst.timings.google) * 1/(config.GOOGLE_SEARCH_RESP_WEIGHT) \
-            + float(inst.timings.wikipedia) * 1/(config.WIKIPEDIA_SEARCH_RESP_WEIGHT)
-        score = round(score, 2)
-        
-
-        canidate_list.append(Canidate(inst, score))
-
-    canidate_list.sort(key=lambda c: c.score)
-    
-    return canidate_list
-
 def update_best_server():
     global _last_run_time
 
@@ -278,7 +222,7 @@ def update_best_server():
         return
 
     instances = Instances(config.INSTANCES_JSON_URL)
-    canidates = find_canidates(instances)
+    canidates = asyncio.run(judge.find_canidates(instances))
     [print(v) for v in canidates]
 
     _last_run_time = math.floor(time.time())
