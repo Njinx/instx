@@ -28,8 +28,8 @@ def _latency_test_repack_results(resp: icmp.Host) -> LatencyResponse:
             resp.is_alive,
             resp.packet_loss)
 
-def do_latency_tests(urls: list[str]) -> list[LatencyResponse]:
-    resp_list: list[icmp.Host] = icmp.multiping(
+async def do_latency_tests(urls: list[str]) -> list[LatencyResponse]:
+    resp_list: list[icmp.Host] = await icmp.async_multiping(
         urls,
         count=4,
         interval=0.2,
@@ -42,8 +42,8 @@ def do_latency_tests(urls: list[str]) -> list[LatencyResponse]:
 
     return ret
 
-def do_latency_test_intensive(url: str) -> LatencyResponse:
-    resp: LatencyResponse = icmp.ping(
+async def do_latency_test_intensive(url: str) -> LatencyResponse:
+    resp: LatencyResponse = await icmp.async_ping(
         url,
         count = 8,
         interval = 2,

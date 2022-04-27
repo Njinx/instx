@@ -222,7 +222,7 @@ def update_best_server():
         return
 
     instances = Instances(config.INSTANCES_JSON_URL)
-    canidates = asyncio.run(judge.find_canidates(instances))
+    canidates = judge.find_canidates(instances)
     [print(v) for v in canidates]
 
     _last_run_time = math.floor(time.time())

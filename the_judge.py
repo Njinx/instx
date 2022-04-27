@@ -1,8 +1,10 @@
+from typing import Coroutine
 import utils
 from utils import LatencyResponse
 from updater import Instance, Instances
 import config
 import asyncio
+import urllib.parse
 
 class Canidate():
     def __init__(self, instance: Instance, score: float):
@@ -18,10 +20,10 @@ def is_outlier(avgs: float, latency: float, weight: float) -> bool:
     else:
         return False
 
-async def find_canidates(instances: Instances) -> list[Canidate]:
+def find_canidates(instances: Instances) -> list[Canidate]:
     timing_avgs = instances.get_timing_avgs()
     
-    canidate_list: list[Canidate] = []
+    canidates: list[Canidate] = []
     for inst in instances.instance_list:
 
         if not isinstance(inst.timings.initial, float) \
@@ -55,29 +57,38 @@ async def find_canidates(instances: Instances) -> list[Canidate]:
               + float(inst.timings.wikipedia) * 1/(config.WIKIPEDIA_SEARCH_RESP_WEIGHT)
         score = round(score, 2)
 
-        canidate_list.append(Canidate(inst, score))
+        canidates.append(Canidate(inst, score))
 
-    canidate_list.sort(key=lambda c: c.score)
+    canidates.sort(key=lambda c: c.score)
 
     # Now that we've weeded out the bad instances, lets conduct some actual latency 
     # tests for more accurate results.
-    test_results: list[LatencyResponse] = utils.do_latency_tests(
-        list(map(lambda x: x.instance.url, canidate_list)))
+    test_results: list[LatencyResponse] = asyncio.run(utils.do_latency_tests(
+        list(map(lambda x: urllib.parse.urlparse(x.instance.url).netloc, canidates))))
 
-    await _refine_test_canidates(test_results, canidate_list)
+    asyncio.run(_refine_test_canidates(test_results, canidates))
     
-    return canidate_list
+    return canidates
 
 async def _refine_test_canidates(
         test_results: list[LatencyResponse],
-        canidate_list: list[Canidate]):
+        canidates: list[Canidate]):
 
-    [_refine_test_canidates_iter(result, canidate_list) for result in test_results]
+    tasks: list[Coroutine] = []
+    for result in test_results:
+        tasks.append(_refine_test_canidates_iter(result))
 
-async def _refine_test_canidates_iter(result: LatencyResponse, canidate_list: list[Canidate]):
+    for ret in await asyncio.gather(*(tasks)):
+        if not ret[0]:
+            test_result: LatencyResponse = ret[1]
+            canidates[:] = [c for c in canidates if c.instance.url != test_result.addr]
+
+async def _refine_test_canidates_iter(result: LatencyResponse) \
+        -> tuple[LatencyResponse, bool]:
     if not result.is_alive:
-        print(f':( no alive {result.addr}')
-        intensive_results: LatencyResponse = await utils.do_latency_test_intensive(result.addr)
-        if not intensive_results.is_alive:
-            canidate_list[:] = [c for c in canidate_list if c.instance.url != result.addr]
+        res_hostname: str = urllib.parse.urlparse(result.addr).netloc
+        intensive_result: LatencyResponse = await utils.do_latency_test_intensive(res_hostname)
+        if not intensive_result.is_alive:
+            return (result, False)
 
+    return (result, True)
