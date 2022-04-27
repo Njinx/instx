@@ -1,18 +1,10 @@
 from typing import Coroutine
 import utils
 from utils import LatencyResponse
-from updater import Instance, Instances
 import config
 import asyncio
 import urllib.parse
-
-class Canidate():
-    def __init__(self, instance: Instance, score: float):
-        self.instance = instance
-        self.score = score
-
-    def __str__(self) -> str:
-        return "[{}] {}".format(self.score, self.instance)
+from common import Canidate, Instance, Instances
 
 def is_outlier(avgs: float, latency: float, weight: float) -> bool:
     if (latency*weight > avgs*config.OUTLIER_MULTIPLIER) or (latency < 0):
@@ -68,6 +60,7 @@ def find_canidates(instances: Instances) -> list[Canidate]:
 
     asyncio.run(_refine_test_canidates(test_results, canidates))
     
+    canidates.reverse() # For use as a stack; best canidates need to be on top
     return canidates
 
 async def _refine_test_canidates(
