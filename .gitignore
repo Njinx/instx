@@ -2,5 +2,8 @@ env/
 __pycache__/
 .mypy.cache/
 .vscode/
+*.log
+flamegraph.*
 criteria.json
+servers.dat
 
