@@ -21,7 +21,7 @@ def update_best_servers():
     if (cur_time - _last_run_time) / 60 < config.UPDATE_INTERVAL:
         return
 
-    instances = Instances(config.INSTANCES_JSON_URL)
+    instances = Instances("https://searx.space/data/instances.json")
     canidates: list[Canidate] = judge.find_canidates(instances)
     
     with open(SERVER_PICKLE, "wb") as fp:

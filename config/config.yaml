@@ -1,0 +1,16 @@
+default_instance: "https://paulgo.io"
+
+proxy:
+  port: 8080            # Port to run proxy on
+
+updater:
+  update_interval: 180  # Update interval in minutes
+
+  advanced:
+    initial_resp_weight: 1.2
+    search_resp_weight: 1.2
+    google_SEARCH_resp_weight: 0.6
+    wikipedia_SEARCH_resp_weight: 0.8
+    outlier_multiplier: 2.0
+
+
