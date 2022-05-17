@@ -2,6 +2,7 @@ package config
 
 import (
 	"embed"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -11,70 +12,97 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed config.yaml
+//go:embed searx_space_autoselector.yaml
 var DEFAULT_CONFIG embed.FS
 
 type Config struct {
-	Default_instance string
-	Proxy            struct {
-		Port int
-	}
+	DefaultInstance string `yaml:"default_instance"`
+	Proxy           struct {
+		Port int `yaml:"port"`
+	} `yaml:"proxy"`
 	Updater struct {
-		update_interval int
-	}
+		updateInterval int `yaml:"update_interval"`
+	} `yaml:"updater"`
 	Advanced struct {
-		Initial_resp_weight          int
-		Search_resp_weight           int
-		Google_SEARCH_resp_weight    int
-		Wikipedia_SEARCH_resp_weight int
-		Outlier_multiplier           int
-	}
+		InitialRespWeight         int `yaml:"initial_resp_weight"`
+		SearchRespWeight          int `yaml:"search_resp_weight"`
+		GoogleSearchRespWeight    int `yaml:"google_search_resp_weight"`
+		WikipediaSearchRespWeight int `yaml:"wikipedia_search_resp_weight"`
+		OutlierMultiplier         int `yaml:"outlier_multipler"`
+	} `yaml:"advanced"`
 }
 
 var configCache Config
 
-func readFd(fd *os.File) string {
-	raw, err := io.ReadAll(fd)
+func createDefaultConfig(path string) (*os.File, error) {
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		log.Fatalf("Could not read config file: %s\n", err.Error())
+		return nil, err
 	}
-	return string(raw[:])
+	defer fd.Close()
+
+	configData, err := DEFAULT_CONFIG.ReadFile("config.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = fd.Write(configData)
+	if err != nil {
+		return nil, err
+	}
+
+	return fd, nil
 }
 
-func getConfigData() string {
+func getConfigDataFromPath(path string) ([]byte, error) {
+	var fd *os.File
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		fd, err = createDefaultConfig(path)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fd, err = os.OpenFile(path, os.O_CREATE, 0644)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	data, err := io.ReadAll(fd)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func getConfigData() []byte {
+
+	// Try environment variable
+	envPath := os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
+	if envPath != "" {
+		data, err := getConfigDataFromPath(envPath)
+		if err != nil {
+			log.Fatalf(
+				"Could not read config file at \"%s\": %s",
+				envPath, err.Error())
+		}
+		return data
+	}
+
+	// Try hardcoded path
 	user, err := user.Current()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/searx_space_autoselector.conf")
-
-	envPath := os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
-	if envPath != "" {
-		fd, err := os.OpenFile(envPath, os.O_CREATE, 0644)
-		if err != nil {
-			log.Printf(
-				"Could not read config file \"%s\". Falling back to default path \"%s\"",
-				envPath,
-				DEFAULT_PATH)
-		} else {
-			defer fd.Close()
-			return readFd(fd)
-		}
-	}
-
-	fd, err := os.OpenFile(DEFAULT_PATH, os.O_RDONLY|os.O_CREATE, 0644)
+	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/searx_space_autoselector.yaml")
+	data, err := getConfigDataFromPath(envPath)
 	if err != nil {
 		log.Fatalf(
-			"Could not read config file \"%s\". Exiting.",
-			DEFAULT_PATH)
-	} else {
-		defer fd.Close()
-		return readFd(fd)
+			"Could not read config file at \"%s\": %s",
+			DEFAULT_PATH, err.Error())
 	}
-
-	// Should never occur
-	return ""
+	return data
 }
 
 func ParseConfig() *Config {
