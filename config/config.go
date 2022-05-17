@@ -69,6 +69,7 @@ func getConfigDataFromPath(path string) ([]byte, error) {
 	}
 
 	data, err := io.ReadAll(fd)
+	fd.Close()
 	if err != nil {
 		return nil, err
 	}
