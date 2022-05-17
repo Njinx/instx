@@ -1,9 +1,9 @@
+proxy
 env/
 __pycache__/
 .mypy.cache/
 .vscode/
-*.log
-flamegraph.*
 criteria.json
+flamegraph.svg
+*.log
 servers.dat
-
