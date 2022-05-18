@@ -1,4 +1,4 @@
-default_instance: "https://paulgo.io"
+default_instance: https://paulgo.io
 
 proxy:
   port: 8080            # Port to run proxy on
@@ -12,5 +12,16 @@ updater:
     google_SEARCH_resp_weight: 0.6
     wikipedia_SEARCH_resp_weight: 0.8
     outlier_multiplier: 2.0
+
+  criteria:
+    minimum_csp_grade: A
+    minimum_tls_grade: A
+    allowed_http_grades: [V, F, C]
+    allow_analytics: no
+    is_onion: no
+    require_dnssec: yes
+
+    # required|forbidden|impartial
+    searxng_preference: required
 
 

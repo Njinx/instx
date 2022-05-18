@@ -21,27 +21,43 @@ type Config struct {
 		Port int `yaml:"port"`
 	} `yaml:"proxy"`
 	Updater struct {
-		updateInterval int `yaml:"update_interval"`
+		UpdateInterval int `yaml:"update_interval"`
+		Advanced       struct {
+			InitialRespWeight         float64 `yaml:"initial_resp_weight"`
+			SearchRespWeight          float64 `yaml:"search_resp_weight"`
+			GoogleSearchRespWeight    float64 `yaml:"google_search_resp_weight"`
+			WikipediaSearchRespWeight float64 `yaml:"wikipedia_search_resp_weight"`
+			OutlierMultiplier         float64 `yaml:"outlier_multipler"`
+		} `yaml:"advanced"`
+		Criteria struct {
+			MinimumCspGrade   string   `yaml:"minimum_csp_grade"`
+			MinimumTlsGrade   string   `yaml:"minimum_tls_grade"`
+			AllowedHttpGrades []string `yaml:"allowed_http_grades,flow"`
+			AllowAnalytics    bool     `yaml:"allow_analytics"`
+			IsOnion           bool     `yaml:"is_onion"`
+			RequireDnssec     bool     `yaml:"require_dnssec"`
+			SearxngPreference string   `yaml:"searxng_preference"`
+		} `yaml:"criteria"`
 	} `yaml:"updater"`
-	Advanced struct {
-		InitialRespWeight         int `yaml:"initial_resp_weight"`
-		SearchRespWeight          int `yaml:"search_resp_weight"`
-		GoogleSearchRespWeight    int `yaml:"google_search_resp_weight"`
-		WikipediaSearchRespWeight int `yaml:"wikipedia_search_resp_weight"`
-		OutlierMultiplier         int `yaml:"outlier_multipler"`
-	} `yaml:"advanced"`
 }
 
-var configCache Config
-
 func createDefaultConfig(path string) (*os.File, error) {
-	fd, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0644)
+	baseDir := filepath.Dir(path)
+	info, err := os.Stat(baseDir)
 	if err != nil {
 		return nil, err
 	}
-	defer fd.Close()
 
-	configData, err := DEFAULT_CONFIG.ReadFile("config.yaml")
+	if !info.IsDir() {
+		os.MkdirAll(baseDir, 0755)
+	}
+
+	fd, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	configData, err := DEFAULT_CONFIG.ReadFile("searx_space_autoselector.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +113,7 @@ func getConfigData() []byte {
 	}
 
 	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/searx_space_autoselector.yaml")
-	data, err := getConfigDataFromPath(envPath)
+	data, err := getConfigDataFromPath(DEFAULT_PATH)
 	if err != nil {
 		log.Fatalf(
 			"Could not read config file at \"%s\": %s",
@@ -106,9 +122,14 @@ func getConfigData() []byte {
 	return data
 }
 
+var notFirstRun bool
+var configCache Config
+
 func ParseConfig() *Config {
-	if configCache != (Config{}) {
+	if notFirstRun {
 		return &configCache
+	} else {
+		notFirstRun = true
 	}
 
 	conf := Config{}
