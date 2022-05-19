@@ -52,7 +52,7 @@ func createDefaultConfig(path string) (*os.File, error) {
 		os.MkdirAll(baseDir, 0755)
 	}
 
-	fd, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
+	fd, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, err
 	}
