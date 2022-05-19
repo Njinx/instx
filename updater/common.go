@@ -33,27 +33,27 @@ func schoolScaleToInt(grade string) int {
 }
 
 type Timings struct {
-	initial   float64
-	search    float64
-	google    float64
-	wikipedia float64
+	Initial   float64
+	Search    float64
+	Google    float64
+	Wikipedia float64
 }
 
 func (s *Timings) String() string {
 	return fmt.Sprintf("( I=%.02f, S=%.02f, G=%.02f, W=%.02f )",
-		s.initial,
-		s.search,
-		s.google,
-		s.wikipedia)
+		s.Initial,
+		s.Search,
+		s.Google,
+		s.Wikipedia)
 }
 
 type Instance struct {
-	url     string
-	timings Timings
+	Url     string
+	Timings Timings
 }
 
 func (s *Instance) String() string {
-	return fmt.Sprintf("\"%s\": %s", s.url, s.timings.String())
+	return fmt.Sprintf("\"%s\": %s", s.Url, s.Timings.String())
 }
 
 type Instances struct {
@@ -77,29 +77,29 @@ func (s *Instances) getTimingAvgs() Timings {
 	var wikipediaI float64
 
 	for _, inst := range s.instanceList {
-
-		if inst.timings.initial > 0 {
-			avgs.initial += inst.timings.initial
+		timings := inst.Timings
+		if timings.Initial > 0 {
+			avgs.Initial += timings.Initial
 			initialI += 1.0
 		}
-		if inst.timings.search > 0 {
-			avgs.search += inst.timings.search
+		if timings.Search > 0 {
+			avgs.Search += timings.Search
 			searchI += 1.0
 		}
-		if inst.timings.google > 0 {
-			avgs.google += inst.timings.google
+		if timings.Google > 0 {
+			avgs.Google += timings.Google
 			googleI += 1.0
 		}
-		if inst.timings.wikipedia > 0 {
-			avgs.wikipedia += inst.timings.wikipedia
+		if timings.Wikipedia > 0 {
+			avgs.Wikipedia += timings.Wikipedia
 			wikipediaI += 1.0
 		}
 	}
 
-	avgs.initial /= initialI
-	avgs.search /= searchI
-	avgs.google /= googleI
-	avgs.wikipedia /= wikipediaI
+	avgs.Initial /= initialI
+	avgs.Search /= searchI
+	avgs.Google /= googleI
+	avgs.Wikipedia /= wikipediaI
 
 	return avgs
 }
@@ -208,25 +208,25 @@ func visitInstance(k []byte, v *fastjson.Value) {
 	}
 
 	timings := Timings{
-		initial:   float64(negativeOneOnError(v.GetFloat64("initial", "all", "value"))),
-		search:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
-		google:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
-		wikipedia: float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
+		Initial:   float64(negativeOneOnError(v.GetFloat64("initial", "all", "value"))),
+		Search:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
+		Google:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
+		Wikipedia: float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
 	}
 
 	instances.instanceList = append(instances.instanceList, Instance{
-		url:     string(k),
-		timings: timings,
+		Url:     string(k),
+		Timings: timings,
 	})
 }
 
 type Canidate struct {
-	instance Instance
-	score    float64
+	Instance
+	score float64
 }
 
 func (s *Canidate) String() string {
-	return fmt.Sprintf("[%0.2f] %s", s.score, s.instance.String())
+	return fmt.Sprintf("[%0.2f] %s", s.score, s.String())
 }
 
 type Canidates []Canidate

@@ -23,27 +23,24 @@ func findCanidates(instances *Instances) Canidates {
 
 	var canidates Canidates
 	for _, inst := range instances.instanceList {
+		timings := inst.Timings
+		if isOutlier(avgs.Initial, timings.Initial, conf.InitialRespWeight) {
+			continue
+		}
+		if isOutlier(avgs.Search, timings.Search, conf.SearchRespWeight) {
+			continue
+		}
+		if isOutlier(avgs.Google, timings.Google, conf.GoogleSearchRespWeight) {
+			continue
+		}
+		if isOutlier(avgs.Wikipedia, timings.Wikipedia, conf.WikipediaSearchRespWeight) {
+			continue
+		}
 
-		if isOutlier(avgs.initial, inst.timings.initial, conf.InitialRespWeight) {
-			continue
-		}
-		if isOutlier(avgs.search, inst.timings.search, conf.SearchRespWeight) {
-			continue
-		}
-		if isOutlier(avgs.google, inst.timings.google, conf.GoogleSearchRespWeight) {
-			continue
-		}
-		if isOutlier(avgs.wikipedia, inst.timings.wikipedia, conf.WikipediaSearchRespWeight) {
-			continue
-		}
-
-		score := inst.timings.initial/conf.InitialRespWeight + inst.timings.search/conf.SearchRespWeight + inst.timings.google/conf.GoogleSearchRespWeight + inst.timings.wikipedia/conf.WikipediaSearchRespWeight
+		score := timings.Initial/conf.InitialRespWeight + timings.Search/conf.SearchRespWeight + timings.Google/conf.GoogleSearchRespWeight + timings.Wikipedia/conf.WikipediaSearchRespWeight
 		score = math.Floor(score*100) / 100
 
-		canidates = append(canidates, Canidate{
-			instance: inst,
-			score:    score,
-		})
+		canidates = append(canidates, Canidate{inst, score})
 	}
 
 	sort.Sort(canidates)
@@ -53,7 +50,7 @@ func findCanidates(instances *Instances) Canidates {
 	getUrls := func(x *Canidates) []string {
 		var urls []string
 		for _, canidate := range canidates {
-			urls = append(urls, canidate.instance.url)
+			urls = append(urls, canidate.Url)
 		}
 
 		return urls
@@ -72,7 +69,7 @@ func refineTestCanidates(
 
 	resultToCanidate := func(result LatencyResponse, canidates *Canidates) Canidate {
 		for _, canidate := range *canidates {
-			if canidate.instance.url == result.addr {
+			if canidate.Url == result.addr {
 				return canidate
 			}
 		}

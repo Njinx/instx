@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"sync"
 	"time"
 
 	"gitlab.com/Njinx/searx-space-autoselector/config"
@@ -9,7 +10,7 @@ import (
 var bestServer string
 var lastRunTime int64
 
-func Run() {
+func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	conf := config.ParseConfig()
 
 	bestServer = conf.DefaultInstance
@@ -25,14 +26,32 @@ func Run() {
 		println(i.String())
 	}
 
-	if len(canidates) == 0 {
-		bestServer = conf.DefaultInstance
-	} else {
-		bestServer = canidates[0].instance.url
-	}
+	updatedCanidatesMutex.Lock()
+	*updatedCanidates = canidates
+	updatedCanidatesMutex.Unlock()
 
 	lastRunTime = time.Now().Unix()
-	//time.Sleep(time.Minute)
+}
+
+func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
+
+	// Since the updater hasn't actually run yet, give the proxy the default
+	// instance (as a dummy Canidates object)
+	updatedCanidatesMutex.Lock()
+	*updatedCanidates = []Canidate{
+		{
+			Instance{
+				Url: config.ParseConfig().DefaultInstance,
+			},
+			0.0,
+		},
+	}
+	updatedCanidatesMutex.Unlock()
+
+	for {
+		go updateBestServers(updatedCanidates, updatedCanidatesMutex)
+		time.Sleep(time.Minute)
+	}
 }
 
 func GetBestServer() string {
