@@ -23,7 +23,7 @@ type Config struct {
 		Port int `yaml:"port"`
 	} `yaml:"proxy"`
 	Updater struct {
-		UpdateInterval int `yaml:"update_interval"`
+		UpdateInterval int64 `yaml:"update_interval"`
 		Advanced       struct {
 			InitialRespWeight         float64 `yaml:"initial_resp_weight"`
 			SearchRespWeight          float64 `yaml:"search_resp_weight"`
