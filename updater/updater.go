@@ -19,12 +19,10 @@ func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.
 
 	instances := NewInstances("https://searx.space/data/instances.json")
 	canidates := findCanidates(&instances)
-	for _, i := range instances.instanceList {
-		println(i.String())
-	}
 
 	updatedCanidatesMutex.Lock()
 	*updatedCanidates = canidates
+	println(updatedCanidates.Get(0).Url)
 	updatedCanidatesMutex.Unlock()
 
 	lastRunTime = time.Now().Unix()
@@ -35,14 +33,12 @@ func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	// Since the updater hasn't actually run yet, give the proxy the default
 	// instance (as a dummy Canidates object)
 	updatedCanidatesMutex.Lock()
-	*updatedCanidates = []Canidate{
-		{
-			Instance{
-				Url: config.ParseConfig().DefaultInstance,
-			},
-			0.0,
+	updatedCanidates.PushFront(Canidate{
+		Instance{
+			Url: config.ParseConfig().DefaultInstance,
 		},
-	}
+		0.0,
+	})
 	updatedCanidatesMutex.Unlock()
 
 	for {

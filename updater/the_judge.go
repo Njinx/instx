@@ -2,6 +2,7 @@ package updater
 
 import (
 	"math"
+	urllib "net/url"
 	"sort"
 
 	"gitlab.com/Njinx/searx-space-autoselector/config"
@@ -21,7 +22,7 @@ func findCanidates(instances *Instances) Canidates {
 	conf := config.ParseConfig().Updater.Advanced
 	avgs := instances.getTimingAvgs()
 
-	var canidates Canidates
+	canidates := NewCanidates()
 	for _, inst := range instances.instanceList {
 		timings := inst.Timings
 		if isOutlier(avgs.Initial, timings.Initial, conf.InitialRespWeight) {
@@ -40,53 +41,56 @@ func findCanidates(instances *Instances) Canidates {
 		score := timings.Initial/conf.InitialRespWeight + timings.Search/conf.SearchRespWeight + timings.Google/conf.GoogleSearchRespWeight + timings.Wikipedia/conf.WikipediaSearchRespWeight
 		score = math.Floor(score*100) / 100
 
-		canidates = append(canidates, Canidate{inst, score})
+		canidates.PushBack(Canidate{inst, score})
 	}
-
-	sort.Sort(canidates)
 
 	// Now that we've weeded out the bad instances, lets conduct some actual latency
 	// tests for more accurate results.
 	getUrls := func(x *Canidates) []string {
 		var urls []string
-		for _, canidate := range canidates {
+		x.Iterate(func(canidate *Canidate) bool {
 			urls = append(urls, canidate.Url)
-		}
-
+			return false
+		})
 		return urls
 	}
 
 	testResults := doLatencyTests(getUrls(&canidates))
-	canidates = refineTestCanidates(testResults, &canidates)
+	refineTestCanidates(testResults, &canidates)
 
-	//canidates.reverse() // For use as a stack the best canidates need to be on top
+	sort.Sort(canidates)
+	// For use as a stack the best canidates need to be on top
+	canidates.Reverse()
+
 	return canidates
 }
 
-func refineTestCanidates(
-	testResults []LatencyResponse,
-	canidates *Canidates) Canidates {
-
-	resultToCanidate := func(result LatencyResponse, canidates *Canidates) Canidate {
-		for _, canidate := range *canidates {
-			if canidate.Url == result.addr {
-				return canidate
+func refineTestCanidates(testResults []LatencyResponse, canidates *Canidates) {
+	resultToCanidate := func(result LatencyResponse, canidates *Canidates) *Canidate {
+		var ret *Canidate
+		canidates.Iterate(func(canidate *Canidate) bool {
+			if parsed, _ := urllib.Parse(canidate.Url); parsed.Host == result.hostname {
+				ret = canidate
+				return true
 			}
-		}
 
-		return Canidate{}
+			return false
+		})
+
+		return ret
 	}
 
-	var newCanidates Canidates
+	newCanidates := NewCanidates()
 	for _, result := range testResults {
+		if !result.isAlive {
+			intensiveResult := doLatencyTestIntensive(result.hostname)
+			result.isAlive = intensiveResult.isAlive
+		}
+
 		if result.isAlive {
-			/*intensiveResult := doLatencyTestIntensive(result.addr)
-			if intensiveResult.isAlive {
-				continue
-			}*/
-			newCanidates = append(newCanidates, resultToCanidate(result, canidates))
+			newCanidates.PushBack(resultToCanidate(result, canidates))
 		}
 	}
 
-	return newCanidates
+	canidates = &newCanidates
 }

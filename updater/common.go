@@ -1,11 +1,13 @@
 package updater
 
 import (
+	"container/list"
 	"fmt"
 	"io"
 	"log"
 	"math"
 	"net/http"
+	urllib "net/url"
 	"strings"
 	"sync"
 	"time"
@@ -229,22 +231,86 @@ func (s *Canidate) String() string {
 	return fmt.Sprintf("[%0.2f] %s", s.score, s.Instance.String())
 }
 
-type Canidates []Canidate
+type Canidates struct {
+	*list.List
+}
+
+func NewCanidates() Canidates {
+	return Canidates{
+		list.New(),
+	}
+}
+
+func (c *Canidates) Iterate(fn func(canidate *Canidate) bool) {
+	for elem := c.Front(); elem != nil; elem = elem.Next() {
+		if canidate, ok := elem.Value.(Canidate); ok {
+			if fn(&canidate) {
+				return
+			}
+		}
+	}
+}
+
+func (c *Canidates) DoubleIterate(fn func(canidate1 *Canidate, canidate2 *Canidate) bool) {
+	for elem1, elem2 := c.Front(), c.Back(); elem1 != nil && elem2 != nil; elem1, elem2 = elem1.Next(), elem2.Prev() {
+		if canidate1, ok1 := elem1.Value.(Canidate); ok1 {
+			if canidate2, ok2 := elem2.Value.(Canidate); ok2 {
+				if fn(&canidate1, &canidate2) {
+					return
+				}
+			}
+		}
+	}
+}
 
 func (c Canidates) Len() int {
-	return len(c)
+	var i int
+	c.Iterate(func(canidate *Canidate) bool {
+		i++
+		return false
+	})
+	return i
+}
+
+func (c Canidates) Get(i int) *Canidate {
+	var iElem *Canidate
+	var iIndex int
+	c.Iterate(func(canidate *Canidate) bool {
+		if iIndex == i {
+			iElem = canidate
+			return true
+		}
+
+		iIndex++
+		return false
+	})
+
+	return iElem
 }
 
 func (c Canidates) Less(i int, j int) bool {
-	return c[i].score > c[j].score
+	iElem := c.Get(i)
+	jElem := c.Get(j)
+
+	return jElem.score < iElem.score
 }
 
 func (c Canidates) Swap(i int, j int) {
-	c[i], c[j] = c[j], c[i]
+	iElem := c.Get(i)
+	jElem := c.Get(j)
+
+	iElem, jElem = jElem, iElem
+}
+
+func (c *Canidates) Reverse() {
+	c.DoubleIterate(func(canidate1, canidate2 *Canidate) bool {
+		canidate1, canidate2 = canidate2, canidate1
+		return false
+	})
 }
 
 type LatencyResponse struct {
-	addr       string
+	hostname   string
 	avgLatency float64
 	isAlive    bool
 	packetLoss float64
@@ -266,9 +332,19 @@ func doLatencyTestsEx(
 		url := strings.Clone(tmpUrl)
 
 		go func() {
-			var resp LatencyResponse
+			resp := LatencyResponse{
+				hostname: url,
+			}
 
-			pinger, err := ping.NewPinger(url)
+			parsedUrl, err := urllib.Parse(url)
+			if err != nil {
+				log.Printf("Could not parse URL \"%s\": %s", url, err.Error())
+				wg.Done()
+				return
+			}
+			hostname := parsedUrl.Host
+
+			pinger, err := ping.NewPinger(hostname)
 			if err != nil {
 				log.Println(err.Error())
 				resp.isAlive = false
@@ -282,10 +358,14 @@ func doLatencyTestsEx(
 
 			err = pinger.Run()
 			if err != nil {
-				log.Printf("Could not ping \"%s\": %s\n", url, err.Error())
+				log.Printf("Could not ping \"%s\": %s\n", hostname, err.Error())
 				resp.isAlive = false
 				return
 			}
+
+			stats := pinger.Statistics()
+			resp.avgLatency = stats.AvgRtt.Seconds()
+			resp.packetLoss = stats.PacketLoss
 
 			m.Lock()
 			ret = append(ret, resp)

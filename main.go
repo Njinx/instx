@@ -9,7 +9,7 @@ import (
 
 func main() {
 	var updatedCanidatesMutex sync.Mutex
-	var updatedCanidates updater.Canidates
+	updatedCanidates := updater.NewCanidates()
 
 	go proxy.Run(&updatedCanidates, &updatedCanidatesMutex)
 	go updater.Run(&updatedCanidates, &updatedCanidatesMutex)
