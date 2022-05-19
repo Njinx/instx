@@ -7,13 +7,10 @@ import (
 	"gitlab.com/Njinx/searx-space-autoselector/config"
 )
 
-var bestServer string
 var lastRunTime int64
 
 func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	conf := config.ParseConfig()
-
-	bestServer = conf.DefaultInstance
 
 	curTime := time.Now().Unix()
 	if (curTime-lastRunTime)/60 < int64(conf.Updater.UpdateInterval) {
@@ -52,8 +49,4 @@ func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 		go updateBestServers(updatedCanidates, updatedCanidatesMutex)
 		time.Sleep(time.Minute)
 	}
-}
-
-func GetBestServer() string {
-	return bestServer
 }
