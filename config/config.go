@@ -27,7 +27,7 @@ type Config struct {
 			SearchRespWeight          float64 `yaml:"search_resp_weight"`
 			GoogleSearchRespWeight    float64 `yaml:"google_search_resp_weight"`
 			WikipediaSearchRespWeight float64 `yaml:"wikipedia_search_resp_weight"`
-			OutlierMultiplier         float64 `yaml:"outlier_multipler"`
+			OutlierMultiplier         float64 `yaml:"outlier_multiplier"`
 		} `yaml:"advanced"`
 		Criteria struct {
 			MinimumCspGrade   string   `yaml:"minimum_csp_grade"`
