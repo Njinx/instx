@@ -9,8 +9,8 @@ updater:
   advanced:
     initial_resp_weight: 1.2
     search_resp_weight: 1.2
-    google_SEARCH_resp_weight: 0.6
-    wikipedia_SEARCH_resp_weight: 0.8
+    google_search_resp_weight: 0.6
+    wikipedia_search_resp_weight: 0.8
     outlier_multiplier: 2.0
 
   criteria:
