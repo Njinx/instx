@@ -80,19 +80,19 @@ func (s *Instances) getTimingAvgs() Timings {
 		timings := inst.Timings
 		if timings.Initial > 0 {
 			avgs.Initial += timings.Initial
-			initialI += 1.0
+			initialI++
 		}
 		if timings.Search > 0 {
 			avgs.Search += timings.Search
-			searchI += 1.0
+			searchI++
 		}
 		if timings.Google > 0 {
 			avgs.Google += timings.Google
-			googleI += 1.0
+			googleI++
 		}
 		if timings.Wikipedia > 0 {
 			avgs.Wikipedia += timings.Wikipedia
-			wikipediaI += 1.0
+			wikipediaI++
 		}
 	}
 
@@ -208,10 +208,10 @@ func visitInstance(k []byte, v *fastjson.Value) {
 	}
 
 	timings := Timings{
-		Initial:   float64(negativeOneOnError(v.GetFloat64("initial", "all", "value"))),
-		Search:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
-		Google:    float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
-		Wikipedia: float64(negativeOneOnError(v.GetFloat64("search", "all", "median"))),
+		Initial:   float64(negativeOneOnError(v.GetFloat64("timing", "initial", "all", "value"))),
+		Search:    float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
+		Google:    float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
+		Wikipedia: float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
 	}
 
 	instances.instanceList = append(instances.instanceList, Instance{
@@ -226,7 +226,7 @@ type Canidate struct {
 }
 
 func (s *Canidate) String() string {
-	return fmt.Sprintf("[%0.2f] %s", s.score, s.String())
+	return fmt.Sprintf("[%0.2f] %s", s.score, s.Instance.String())
 }
 
 type Canidates []Canidate
@@ -261,8 +261,10 @@ func doLatencyTestsEx(
 	var ret []LatencyResponse
 
 	var wg sync.WaitGroup
-	for _, url := range urls {
+	for _, tmpUrl := range urls {
 		wg.Add(1)
+		url := strings.Clone(tmpUrl)
+
 		go func() {
 			var resp LatencyResponse
 
