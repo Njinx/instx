@@ -7,25 +7,17 @@ import (
 	"gitlab.com/Njinx/instx/config"
 )
 
-var lastRunTime int64
-
 func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
-	conf := config.ParseConfig()
-
-	curTime := time.Now().Unix()
-	if (curTime-lastRunTime)/60 < int64(conf.Updater.UpdateInterval) {
-		return
-	}
-
 	instances := NewInstances("https://searx.space/data/instances.json")
 	canidates := findCanidates(&instances)
 
 	updatedCanidatesMutex.Lock()
 	*updatedCanidates = canidates
-	println(updatedCanidates.Get(0).Url)
+	updatedCanidates.Iterate(func(canidate *Canidate) bool {
+		println(canidate.String())
+		return false
+	})
 	updatedCanidatesMutex.Unlock()
-
-	lastRunTime = time.Now().Unix()
 }
 
 func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
@@ -41,8 +33,10 @@ func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	})
 	updatedCanidatesMutex.Unlock()
 
+	updateInterval := time.Duration(config.ParseConfig().Updater.UpdateInterval)
 	for {
-		go updateBestServers(updatedCanidates, updatedCanidatesMutex)
-		time.Sleep(time.Minute)
+		updateBestServers(updatedCanidates, updatedCanidatesMutex)
+		_ = updateInterval
+		time.Sleep(updateInterval * time.Minute)
 	}
 }
