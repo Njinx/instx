@@ -1,4 +1,4 @@
-module gitlab.com/Njinx/searx-space-autoselector
+module gitlab.com/Njinx/instx
 
 go 1.18
 

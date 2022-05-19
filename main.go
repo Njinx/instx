@@ -3,8 +3,8 @@ package main
 import (
 	"sync"
 
-	"gitlab.com/Njinx/searx-space-autoselector/proxy"
-	"gitlab.com/Njinx/searx-space-autoselector/updater"
+	"gitlab.com/Njinx/instx/proxy"
+	"gitlab.com/Njinx/instx/updater"
 )
 
 func main() {

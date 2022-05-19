@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-ping/ping"
 	"github.com/valyala/fastjson"
-	"gitlab.com/Njinx/searx-space-autoselector/config"
+	"gitlab.com/Njinx/instx/config"
 )
 
 func schoolScaleToInt(grade string) int {

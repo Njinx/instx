@@ -12,8 +12,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed searx_space_autoselector.yaml
-var DEFAULT_CONFIG embed.FS
+//go:embed instx.yaml
+var DEFAULT_CONFIG_FS embed.FS
+
+const DEFAULT_CONFIG_FILE = "instx.yaml"
 
 type Config struct {
 	DefaultInstance string `yaml:"default_instance"`
@@ -57,7 +59,7 @@ func createDefaultConfig(path string) (*os.File, error) {
 		return nil, err
 	}
 
-	configData, err := DEFAULT_CONFIG.ReadFile("searx_space_autoselector.yaml")
+	configData, err := DEFAULT_CONFIG_FS.ReadFile(DEFAULT_CONFIG_FILE)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +114,7 @@ func getConfigData() []byte {
 		log.Fatalf(err.Error())
 	}
 
-	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/searx_space_autoselector.yaml")
+	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/", DEFAULT_CONFIG_FILE)
 	data, err := getConfigDataFromPath(DEFAULT_PATH)
 	if err != nil {
 		log.Fatalf(

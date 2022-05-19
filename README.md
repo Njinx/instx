@@ -1,7 +1,7 @@
-# SearX.space autoselector
+# InstX
 
-## PROTOTYPE. NOT (VERY) FUNCTIONAL
+### PROTOTYPE. NOT (VERY) FUNCTIONAL
 
-A client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space. The "best" instance is configuable based criteria such as speed, privacy, and security. Updates the instance you used by hosting a local proxy at [https://searx.local:3636](https://searx.local:3636) Supports SearXNG.
+A client-side service that automatically updates the SearX(NG) instance you use to search based on the best one from [searx.space](https://searx.space). The "best" instance is configuable based criteria such as speed, privacy, and security. It updates the instance by hosting a small web server redirects you to the "best" instance. This web server is then set as your default web browser.
 
 

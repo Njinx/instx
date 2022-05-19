@@ -5,7 +5,7 @@ import (
 	urllib "net/url"
 	"sort"
 
-	"gitlab.com/Njinx/searx-space-autoselector/config"
+	"gitlab.com/Njinx/instx/config"
 )
 
 func isOutlier(avgs float64, latency float64, weight float64) bool {
