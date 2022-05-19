@@ -13,10 +13,6 @@ func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.
 
 	updatedCanidatesMutex.Lock()
 	*updatedCanidates = canidates
-	updatedCanidates.Iterate(func(canidate *Canidate) bool {
-		println(canidate.String())
-		return false
-	})
 	updatedCanidatesMutex.Unlock()
 }
 

@@ -263,14 +263,14 @@ func (c *Canidates) DoubleIterate(fn func(canidate1 *Canidate, canidate2 *Canida
 	}
 }
 
-func (c Canidates) Len() int {
+/*func (c Canidates) Len() int {
 	var i int
 	c.Iterate(func(canidate *Canidate) bool {
 		i++
 		return false
 	})
 	return i
-}
+}*/
 
 func (c Canidates) Get(i int) *Canidate {
 	var iElem *Canidate
@@ -288,23 +288,25 @@ func (c Canidates) Get(i int) *Canidate {
 	return iElem
 }
 
-func (c Canidates) Less(i int, j int) bool {
-	iElem := c.Get(i)
-	jElem := c.Get(j)
-
-	return jElem.score < iElem.score
-}
-
-func (c Canidates) Swap(i int, j int) {
-	iElem := c.Get(i)
-	jElem := c.Get(j)
-
-	iElem, jElem = jElem, iElem
+func (c *Canidates) Sort() {
+	current := c.Front()
+	for current != nil {
+		index := current.Next()
+		for index != nil {
+			if current.Value.(Canidate).score > index.Value.(Canidate).score {
+				temp := current.Value
+				current.Value = index.Value
+				index.Value = temp
+			}
+			index = index.Next()
+		}
+		current = current.Next()
+	}
 }
 
 func (c *Canidates) Reverse() {
-	c.DoubleIterate(func(canidate1, canidate2 *Canidate) bool {
-		canidate1, canidate2 = canidate2, canidate1
+	c.DoubleIterate(func(canidate1 *Canidate, canidate2 *Canidate) bool {
+		*canidate1, *canidate2 = *canidate2, *canidate1
 		return false
 	})
 }

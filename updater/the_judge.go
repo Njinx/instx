@@ -3,7 +3,6 @@ package updater
 import (
 	"math"
 	urllib "net/url"
-	"sort"
 
 	"gitlab.com/Njinx/instx/config"
 )
@@ -58,9 +57,10 @@ func findCanidates(instances *Instances) Canidates {
 	testResults := doLatencyTests(getUrls(&canidates))
 	refineTestCanidates(testResults, &canidates)
 
-	sort.Sort(canidates)
-	// For use as a stack the best canidates need to be on top
-	canidates.Reverse()
+	canidates.Sort()
+
+	// // For use as a stack the best canidates need to be on top
+	// canidates.Reverse()
 
 	return canidates
 }
