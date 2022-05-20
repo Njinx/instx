@@ -42,6 +42,28 @@ The default config file is located at `~/.config/instx.yaml` but can be override
 |Yes|updater.criteria.require_dnssec||bool|no|
 |Yes|updater.criteria.searxng_preference||string|required|
 
+### Tuning
+
+#### Response weights
+Applies to the following YAML keys
+* `updater.advanced.initial_resp_weight`
+* `updater.advanced.search_resp_weight`
+* `updater.advanced.google_resp_weight`
+* `updater.advanced.wikipedia_resp_weight`
+
+The response weights control how important the response time when judging each instance
+* **Initial:** Initial response time of the instance
+* **Search:** Response time for all search results
+* **Google:** Response time from Google
+* **Wikipedia:** Response time from Wikipedia
+
+Each setting is a float value _n_ where _0 < n < 2_. Values greater than 1 give more importance to the scenario while values less than 1 give less importance. _n = 1_ nullifies the weight.
+
+# Outlier Multiplier
+Applies to `updater.advanced.outlier_multiplier`.
+
+A float value _n_ where _0 < n < 2_. Higher outlier multiplier values lower the threshold at which a response time is considered an outlier.
+
 ## Apply instance settings automatically
 
 Grab the saved preferences url at https://favorite.instance/preferences and paste it in `instx.yaml` in `preferences_url`. No need to cut out the original domain name.
