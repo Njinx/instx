@@ -20,7 +20,29 @@ const DEFAULT_CONFIG_FILE = "instx.yaml"
 type Config struct {
 	DefaultInstance string `yaml:"default_instance"`
 	Proxy           struct {
-		Port int `yaml:"port"`
+		Port    int `yaml:"port"`
+		Cookies struct {
+			Categories      string `yaml:"categories"`
+			Language        string `yaml:"language"`
+			Locale          string `yaml:"locale"`
+			Autocomplete    string `yaml:"autocomplete"`
+			ImageProxy      string `yaml:"image_proxy"`
+			Method          string `yaml:"method"`
+			Safesearch      string `yaml:"safesearch"`
+			Theme           string `yaml:"theme"`
+			ResultsOnNewTab string `yaml:"results_on_new_tab"`
+			DoiResolver     string `yaml:"doi_resolver"`
+			OscarStyle      string `yaml:"oscar-style"`
+			SimpleStyle     string `yaml:"simple_style"`
+			InfiniteScroll  string `yaml:"infinite_scroll"`
+			DisabledEngines string `yaml:"disabled_engines"`
+			EnabledEngines  string `yaml:"enabled_engines"`
+			DisabledPlugins string `yaml:"disabled_plugins"`
+			EnabledPlugins  string `yaml:"enabled_plugins"`
+			Tokens          string `yaml:"tokens"`
+			Maintab         string `yaml:"maintab"`
+			Enginetab       string `yaml:"enginetab"`
+		} `yaml:"cookies"`
 	} `yaml:"proxy"`
 	Updater struct {
 		UpdateInterval int64 `yaml:"update_interval"`
