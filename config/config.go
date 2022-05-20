@@ -141,9 +141,12 @@ func ParseConfig() *Config {
 		log.Fatalln(err.Error())
 	}
 
-	err = conf.validateConfig()
-	if err != nil {
-		log.Fatalln(err.Error())
+	errs := conf.validateConfig()
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Println(err.Error())
+		}
+		os.Exit(1)
 	}
 
 	configCache = conf

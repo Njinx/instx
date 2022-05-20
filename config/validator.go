@@ -19,70 +19,57 @@ func (e *InvalidValue) Error() string {
 		DEFAULT_CONFIG_FILE, e.key, e.given, e.accepted)
 }
 
-func (c *Config) validateConfig() error {
+func (c *Config) validateConfig() []error {
+	errorArray := make([]error, 0, 32)
 
 	if _, err := urllib.ParseRequestURI(c.DefaultInstance); err != nil {
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "default_instance",
 			given:    c.DefaultInstance,
 			accepted: "Any valid URL.",
-		}
+		})
 	}
 
 	if c.Proxy.Port < 0 || c.Proxy.Port > 65535 {
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "proxy.port",
 			given:    fmt.Sprint(c.Proxy.Port),
 			accepted: "Any valid TCP port number.",
-		}
+		})
 	}
 
 	minTime := int64(0)
 	maxTime := int64(^uint64(0)>>1) / int64(time.Minute)
 	if c.Updater.UpdateInterval < minTime || c.Updater.UpdateInterval > maxTime {
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "updater.update_interval",
 			given:    fmt.Sprint(c.Proxy.Port),
 			accepted: fmt.Sprintf("Any number (in minutes) from %d-%d.", minTime, maxTime),
-		}
+		})
 	}
 
-	respWeightHelper := func(k string, v float64) (bool, InvalidValue) {
+	respWeightHelper := func(k string, v float64) {
 		if v <= 0 || v >= 2 {
-			return false, InvalidValue{
+			errorArray = append(errorArray, &InvalidValue{
 				key:      k,
 				given:    fmt.Sprint(v),
 				accepted: "Any number n: 0 < n < 2. Check the README for more information.",
-			}
-		} else {
-			return true, InvalidValue{}
+			})
 		}
 	}
 
-	if ok, ret := respWeightHelper(
+	respWeightHelper(
 		"updater.advanced.initial_resp_weight",
-		c.Updater.Advanced.InitialRespWeight); !ok {
-
-		return &ret
-	}
-	if ok, ret := respWeightHelper(
+		c.Updater.Advanced.InitialRespWeight)
+	respWeightHelper(
 		"updater.advanced.search_resp_weight",
-		c.Updater.Advanced.SearchRespWeight); !ok {
-
-		return &ret
-	}
-	if ok, ret := respWeightHelper(
+		c.Updater.Advanced.SearchRespWeight)
+	respWeightHelper(
 		"updater.advanced.google_search_resp_weight",
-		c.Updater.Advanced.GoogleSearchRespWeight); !ok {
-
-		return &ret
-	}
-	if ok, ret := respWeightHelper(
+		c.Updater.Advanced.GoogleSearchRespWeight)
+	respWeightHelper(
 		"updater.advanced.wikipedia_search_resp_weight",
-		c.Updater.Advanced.WikipediaSearchRespWeight); !ok {
-
-		return &ret
-	}
+		c.Updater.Advanced.WikipediaSearchRespWeight)
 
 	isLetterGrade := func(grade string) bool {
 		switch grade {
@@ -118,18 +105,18 @@ func (c *Config) validateConfig() error {
 	}
 
 	if !isLetterGrade(c.Updater.Criteria.MinimumCspGrade) {
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "updater.criteria.minimum_csp_grade",
 			given:    c.Updater.Criteria.MinimumCspGrade,
 			accepted: "A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F",
-		}
+		})
 	}
 	if !isLetterGrade(c.Updater.Criteria.MinimumTlsGrade) {
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "updater.criteria.minimum_tls_grade",
 			given:    c.Updater.Criteria.MinimumTlsGrade,
 			accepted: "A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F",
-		}
+		})
 	}
 
 	for _, grade := range c.Updater.Criteria.AllowedHttpGrades {
@@ -147,11 +134,11 @@ func (c *Config) validateConfig() error {
 		case "👁️":
 			continue
 		default:
-			return &InvalidValue{
+			errorArray = append(errorArray, &InvalidValue{
 				key:      "updater.criteria.allowed_http_grades",
 				given:    strings.Join(c.Updater.Criteria.AllowedHttpGrades, ", "),
 				accepted: "Check the README.",
-			}
+			})
 		}
 	}
 
@@ -163,12 +150,12 @@ func (c *Config) validateConfig() error {
 	case "impartial":
 		break
 	default:
-		return &InvalidValue{
+		errorArray = append(errorArray, &InvalidValue{
 			key:      "updater.criteria.searxng_preference",
 			given:    c.Updater.Criteria.SearxngPreference,
 			accepted: "required, forbidden, impartial. Check the README for more information.",
-		}
+		})
 	}
 
-	return nil
+	return errorArray
 }

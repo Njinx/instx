@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+
 	var updatedCanidatesMutex sync.Mutex
 	updatedCanidates := updater.NewCanidates()
 

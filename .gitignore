@@ -6,5 +6,6 @@ __pycache__/
 criteria.json
 flamegraph.svg
 *.log
+*.prof
 servers.dat
 instx
