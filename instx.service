@@ -1,0 +1,12 @@
+[Unit]
+Description=SearX instance balancer
+After=network.target
+
+[Service]
+Type=simple
+Restart=unless-stopped
+RestartSec=1
+ExecStart=/usr/bin/instx
+
+[Install]
+WantedBy=default.target
