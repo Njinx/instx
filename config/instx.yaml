@@ -1,10 +1,13 @@
-default_instance: https://paulgo.io
+# Documentation at https://gitlab.com/Njinx/instx#configuration
+
+default_instance:
 
 proxy:
-  port: 8080            # Port to run proxy on
+  port: 8080
+  preferences_url:
 
 updater:
-  update_interval: 180  # Update interval in minutes
+  update_interval: 180
 
   advanced:
     initial_resp_weight: 1.2
@@ -20,8 +23,6 @@ updater:
     allow_analytics: no
     is_onion: no
     require_dnssec: yes
-
-    # required|forbidden|impartial
     searxng_preference: required
 
 

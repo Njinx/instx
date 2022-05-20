@@ -59,10 +59,22 @@ The response weights control how important the response time when judging each i
 
 Each setting is a float value _n_ where _0 < n < 2_. Values greater than 1 give more importance to the scenario while values less than 1 give less importance. _n = 1_ nullifies the weight.
 
-# Outlier Multiplier
+#### Outlier Multiplier
 Applies to `updater.advanced.outlier_multiplier`.
 
 A float value _n_ where _0 < n < 2_. Higher outlier multiplier values lower the threshold at which a response time is considered an outlier.
+
+#### SearX.space instance criteria
+Applies to everything under `updater.criteria`
+
+`updater.criteria.minimum_csp_grade` and `updater.criteria.minimum_csp_grade` accept letter grades **A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F**. The two grades are the minimum grade the instance needs from [dalf/http-observatory](https://github.com/dalf/http-observatory) and [cryptcheck.fr](https://cryptcheck.fr/) respectively.
+
+`updater.criteria.allowed_http_grades` is an array of the allowed [searx.space](https://searx.space#help-http-grade) Instance grades. **NOTE: "Cjs" doesn't seem to parse properly at the moment.**
+
+`updater.criteria.searxng_preference` accepts three values - required, forbidden, impartial - and dictates how SearXNG instances should be treated.
+* **required:** filters out any non-SearXNG instances 
+* **forbidden:** filters out any SeaXNG instances 
+* **impartial:** no preference
 
 ## Apply instance settings automatically
 
