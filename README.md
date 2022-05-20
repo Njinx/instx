@@ -31,8 +31,8 @@ The default config file is located at `~/.config/instx.yaml` but can be override
 |Yes|updater.update_interval|How often all the instances are queried and analyzed (in minutes)|int64|180 (3 hours)|
 |Yes|updater.advanced.initial_resp_weight||float64|1.2|
 |Yes|updater.advanced.search_resp_weight||float64|1.2|
-|Yes|updater.advanced.google_resp_weight||float64|0.6|
-|Yes|updater.advanced.wikipedia_resp_weight||float64|0.8|
+|Yes|updater.advanced.google_search_resp_weight||float64|0.6|
+|Yes|updater.advanced.wikipedia_search_resp_weight||float64|0.8|
 |Yes|updater.advanced.outlier_multiplier||float64|2.0|
 |Yes|updater.criteria.minimum_csp_grade||string|A|
 |Yes|updater.criteria.minimum_tls_grade||string|A|
@@ -48,8 +48,8 @@ The default config file is located at `~/.config/instx.yaml` but can be override
 Applies to the following YAML keys
 * `updater.advanced.initial_resp_weight`
 * `updater.advanced.search_resp_weight`
-* `updater.advanced.google_resp_weight`
-* `updater.advanced.wikipedia_resp_weight`
+* `updater.advanced.google_search_resp_weight`
+* `updater.advanced.wikipedia_search_resp_weight`
 
 The response weights control how important the response time when judging each instance
 * **Initial:** Initial response time of the instance
