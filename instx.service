@@ -1,11 +1,13 @@
 [Unit]
 Description=SearX instance balancer
 After=network.target
+StartLimitInterval=200
+StartLimitBurst=5
 
 [Service]
 Type=simple
 Restart=unless-stopped
-RestartSec=1
+RestartSec=5
 ExecStart=/usr/bin/instx
 
 [Install]
