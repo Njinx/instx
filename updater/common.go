@@ -148,7 +148,27 @@ func visitInstance(k []byte, v *fastjson.Value) {
 		return
 	}
 
-	criteria := config.ParseConfig().Updater.Criteria
+	instUrl := string(k)
+
+	c := config.ParseConfig()
+	criteria := c.Updater.Criteria
+
+	// Check if instance is in the blacklist
+	for _, blisted := range c.Updater.InstanceBlacklist {
+		instUrlParsed, err := urllib.Parse(instUrl)
+		if err != nil {
+			log.Printf("Could not parse URL \"%s\": %s\n", instUrlParsed, err.Error())
+			break
+		}
+		blistUrlParsed, err := urllib.Parse(blisted)
+		if err != nil {
+			log.Printf("Could not parse URL \"%s\": %s\n", blistUrlParsed, err.Error())
+		}
+
+		if instUrlParsed.Host == blistUrlParsed.Host {
+			return
+		}
+	}
 
 	cspGrade := string(v.GetStringBytes("http", "grade")[:])
 	if cspGrade == "" {
@@ -217,7 +237,7 @@ func visitInstance(k []byte, v *fastjson.Value) {
 	}
 
 	instances.instanceList = append(instances.instanceList, Instance{
-		Url:     string(k),
+		Url:     instUrl,
 		Timings: timings,
 	})
 }

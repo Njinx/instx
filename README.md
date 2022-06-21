@@ -29,6 +29,7 @@ The default config file is located at `~/.config/instx.yaml` but can be override
 |Yes|proxy.port|Web server port|int|8080|
 |No|proxy.preferences_url|[Apply instance settings automatically](#apply-instance-settings-automatically)|string|None|
 |Yes|updater.update_interval|How often all the instances are queried and analyzed (in minutes)|int64|180 (3 hours)|
+|No|updater.instance_blacklist|Instances to ignore. Note that this only compares the host as defined [here](https://pkg.go.dev/net/url#URL).|[]string|None|
 |Yes|updater.advanced.initial_resp_weight||float64|1.2|
 |Yes|updater.advanced.search_resp_weight||float64|1.2|
 |Yes|updater.advanced.google_search_resp_weight||float64|0.6|
@@ -77,6 +78,8 @@ Applies to everything under `updater.criteria`
 * **impartial:** no preference
 
 ## Apply instance settings automatically
+
+#### NOTE: This option does not currently work. I'm trying to find a way to make this viable without compromising browser security.
 
 Grab the saved preferences url at https://favorite.instance/preferences and paste it in `instx.yaml` in `preferences_url`. No need to cut out the original domain name.
 

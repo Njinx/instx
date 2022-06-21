@@ -8,6 +8,7 @@ proxy:
 
 updater:
   update_interval: 180
+  instance_blacklist:
 
   advanced:
     initial_resp_weight: 1.2

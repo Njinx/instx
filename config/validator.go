@@ -26,7 +26,7 @@ func (c *Config) validateConfig() []error {
 		errorArray = append(errorArray, &InvalidValue{
 			key:      "default_instance",
 			given:    c.DefaultInstance,
-			accepted: "Any valid URL.",
+			accepted: "Any valid URL (accepted by net.url.Parse)",
 		})
 	}
 
@@ -155,6 +155,17 @@ func (c *Config) validateConfig() []error {
 			given:    c.Updater.Criteria.SearxngPreference,
 			accepted: "required, forbidden, impartial. Check the README for more information.",
 		})
+	}
+
+	for i, inst := range c.Updater.InstanceBlacklist {
+		url, err := urllib.Parse(inst)
+		if err != nil || len(url.Host) == 0 {
+			errorArray = append(errorArray, &InvalidValue{
+				key:      fmt.Sprintf("updater.instance_blacklist[%d]", i),
+				given:    inst,
+				accepted: "Any valid URL (net.url.Parse)",
+			})
+		}
 	}
 
 	return errorArray

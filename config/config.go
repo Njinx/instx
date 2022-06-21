@@ -24,8 +24,9 @@ type Config struct {
 		PreferencesUrl string `yaml:"preferences_url"`
 	} `yaml:"proxy"`
 	Updater struct {
-		UpdateInterval int64 `yaml:"update_interval"`
-		Advanced       struct {
+		UpdateInterval    int64    `yaml:"update_interval"`
+		InstanceBlacklist []string `yaml:"instance_blacklist"`
+		Advanced          struct {
 			InitialRespWeight         float64 `yaml:"initial_resp_weight"`
 			SearchRespWeight          float64 `yaml:"search_resp_weight"`
 			GoogleSearchRespWeight    float64 `yaml:"google_search_resp_weight"`
