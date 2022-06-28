@@ -79,9 +79,7 @@ Applies to everything under `updater.criteria`
 
 ## Apply instance settings automatically
 
-#### NOTE: This option does not currently work. I'm trying to find a way to make this viable without compromising browser security.
-
-Grab the saved preferences url at https://favorite.instance/preferences and paste it in `instx.yaml` in `preferences_url`. No need to cut out the original domain name.
+Grab the saved preferences url at https://favorite.instance/preferences and paste it in `instx.yaml` in `preferences_url`. No need to cut out the original domain name or any other GET parameters.
 
 ![Instance preferences](./images/preferences_url.png)
 
