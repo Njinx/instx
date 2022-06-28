@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	urllib "net/url"
 	"os"
 	"sync"
 	"time"
@@ -27,6 +28,8 @@ var vfs resources.VFS
 var updatedCanidates *updater.Canidates
 var updatedCanidatesMutex *sync.Mutex
 
+var preferencesData string
+
 func getUrl() string {
 	var ret string
 	if updatedCanidates.Len() == 0 {
@@ -42,14 +45,25 @@ func getUrl() string {
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	url := getUrl()
 
-	w.Header().Add("location", url+req.RequestURI)
+	var craftedUrl string
+	if len(preferencesData) > 0 {
+		craftedUrl = fmt.Sprintf(
+			"%s%s&preferences=%s",
+			url,
+			req.RequestURI,
+			preferencesData)
+	} else {
+		craftedUrl = fmt.Sprintf("%s%s", url, req.RequestURI)
+	}
+
+	w.Header().Add("location", craftedUrl)
 	w.Header().Add("content-type", "text/html; charset=UTF-8")
 	w.Header().Add("date", time.Now().Format(time.RFC1123))
 	w.Header().Add("expires", time.Now().Format(time.RFC1123))
 
 	w.WriteHeader(302)
 
-	w.Write([]byte(fmt.Sprintf(REDIRECT_HTML_FMT, url)))
+	w.Write([]byte(fmt.Sprintf(REDIRECT_HTML_FMT, craftedUrl)))
 }
 
 func serveFile(w http.ResponseWriter, req *http.Request, path string, mime string) {
@@ -92,11 +106,35 @@ func pingHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(resp))
 }
 
+func parsePreferences() {
+	preferencesRaw := config.ParseConfig().Proxy.PreferencesUrl
+	if len(preferencesRaw) == 0 {
+		return
+	}
+
+	preferencesUrl, err := urllib.Parse(preferencesRaw)
+	if err != nil {
+		log.Printf("Could not parse URL \"%s\": %s\n", preferencesRaw, err.Error())
+	}
+
+	params, ok := preferencesUrl.Query()["preferences"]
+	if !ok || len(params) < 1 {
+		log.Println("Could not find the \"preferences\" parameter in preferences_url. Perhaps the URL is invalid.")
+		return
+	} else if len(params) > 1 {
+		log.Println("Too many \"preferences\" parameters in preferences_url. Perhaps the URL is invalid.")
+	}
+
+	preferencesData = params[0]
+}
+
 func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *sync.Mutex) {
 	vfs = resources.New()
 
 	updatedCanidates = updatedCanidatesLocal
 	updatedCanidatesMutex = updatedCanidatesMutexLocal
+
+	parsePreferences()
 
 	http.HandleFunc("/", redirectHandler)
 	http.HandleFunc("/getstarted", getStartedHandler)
