@@ -1,11 +1,6 @@
-proxy
-env/
-__pycache__/
-.mypy.cache/
 .vscode/
 criteria.json
 flamegraph.svg
 *.log
 *.prof
-servers.dat
 instx
