@@ -1,13 +1,20 @@
-image: golang:latest
+before_script:
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
+  - make test
+
+cache:
+    paths:
+      - .cache
 
 stages:
   - test
   - build
-  - deploy
   - release
 
 format:
   stage: test
+  image: golang:latest
   script:
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
@@ -15,20 +22,40 @@ format:
 
 compile:
   stage: build
+  image: golang:latest
   script:
-    - mkdir -p bin
-    - go build -o bin ./...
+    - echo "Job ID - $CI_JOB_ID"
+    - echo COMPILE_JOB_ID=$CI_JOB_ID >> compile.env
+    - bash build.sh
   artifacts:
     paths:
       - bin
+    reports:
+      dotenv: compile.env
 
-release_job:
+release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: compile
+      artifacts: true
   rules:
     - if: $CI_COMMIT_TAG
   script:
-    - echo "running release_job"
+    - echo "Running release from $CI_COMMIT_TAG"
   release:
     tag_name: '$CI_COMMIT_TAG'
     description: '$CI_COMMIT_TAG'
+    ref: '$CI_COMMIT_TAG'
+    assets:
+      links:
+        - name: Linux x86_64
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-linux-amd64'
+        - name: Linux x86
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-linux-386'
+        - name: Windows x86_64
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-windows-amd64'
+        - name: Windows x86
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-windows-386'
+  only:
+    - main
