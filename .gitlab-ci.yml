@@ -49,10 +49,10 @@ release:
     assets:
       links:
         - name: Linux x86_64
-          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/bin/instx-linux-amd64'
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/raw/bin/instx-linux-amd64'
         - name: Linux x86
-          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/bin/instx-linux-386'
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/raw/bin/instx-linux-386'
         - name: Windows x86_64
-          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/bin/instx-windows-amd64.exe'
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/raw/bin/instx-windows-amd64.exe'
         - name: Windows x86
-          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/bin/instx-windows-386.exe'
+          url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/raw/bin/instx-windows-386.exe'
