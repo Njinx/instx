@@ -57,5 +57,3 @@ release:
           url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-windows-amd64'
         - name: Windows x86
           url: 'https://gitlab.com/njinx/instx/-/jobs/${COMPILE_JOB_ID}/artifacts/file/dist/bin/instx-windows-386'
-  only:
-    - main
