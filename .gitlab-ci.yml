@@ -1,7 +1,6 @@
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
-  - make test
 
 cache:
     paths:
