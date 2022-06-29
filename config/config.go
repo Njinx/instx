@@ -135,9 +135,9 @@ func getConfigData() []byte {
 var notFirstRun bool
 var configCache Config
 
-func ParseConfig() *Config {
+func ParseConfig() Config {
 	if notFirstRun {
-		return &configCache
+		return configCache
 	} else {
 		notFirstRun = true
 	}
@@ -157,5 +157,5 @@ func ParseConfig() *Config {
 	}
 
 	configCache = conf
-	return &conf
+	return configCache
 }
