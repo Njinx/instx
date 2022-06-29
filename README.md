@@ -21,7 +21,7 @@ A client-side service that automatically updates the SearX(NG) instance you use 
 ![Set as default search engine](./images/ff_default_search_engine.png)
 
 ## Configuration
-The default config file is located at `~/.config/instx.yaml` but can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
+The default config file is located at `~/.config/instx.yaml` on Linux and `%appdata%/instx/instx.yaml` on Windows but can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
 
 |Required|YAML Key|Description|Go Data Type|Default Value|
 |---|---|---|---|---|
