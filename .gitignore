@@ -3,4 +3,4 @@ criteria.json
 flamegraph.svg
 *.log
 *.prof
-instx
+bin/

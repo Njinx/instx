@@ -6,8 +6,8 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -111,17 +111,23 @@ func getConfigData() []byte {
 	}
 
 	// Try hardcoded path
-	user, err := user.Current()
+	localAppData, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Could not get config dir: %s\n", err.Error())
 	}
 
-	DEFAULT_PATH := filepath.Join(user.HomeDir, ".config/", DEFAULT_CONFIG_FILE)
-	data, err := getConfigDataFromPath(DEFAULT_PATH)
+	var defaultPath string
+	if runtime.GOOS == "windows" {
+		defaultPath = filepath.Join(localAppData, "instx/", DEFAULT_CONFIG_FILE)
+	} else {
+		defaultPath = filepath.Join(localAppData, DEFAULT_CONFIG_FILE)
+	}
+
+	data, err := getConfigDataFromPath(defaultPath)
 	if err != nil {
 		log.Fatalf(
 			"Could not read config file at \"%s\": %s",
-			DEFAULT_PATH, err.Error())
+			defaultPath, err.Error())
 	}
 	return data
 }
