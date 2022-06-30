@@ -148,8 +148,8 @@ func doUpdate() {
 
 func printUsage() {
 	fmt.Printf("Usage: %s COMMAND\n\n", os.Args[0])
-	fmt.Println("\ts|stats\tShow statistics about all instances")
-	fmt.Println("\tu|update\tUpdate the list of instances")
+	fmt.Println("\ts, stats - Show statistics about all instances")
+	fmt.Println("\tu, update - Update the list of instances")
 	fmt.Println()
 }
 
