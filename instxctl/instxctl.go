@@ -1,6 +1,7 @@
 package instxctl
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	"gitlab.com/Njinx/instx/config"
+	"gitlab.com/Njinx/instx/proxy"
 	"gitlab.com/Njinx/instx/updater"
 )
 
@@ -38,7 +40,7 @@ func isInstanceRunning() bool {
 		return false
 	}
 
-	if splitBody[0] == "instx" {
+	if splitBody[0] == proxy.PING_MESSAGE {
 		return true
 	}
 
@@ -95,9 +97,52 @@ func doStats() {
 	}
 }
 
+func doUpdate() {
+	url := fmt.Sprintf("%s/cmd", getInstXUrl())
+
+	reqBody, err := json.Marshal(&proxy.CommandRequest{Name: "update"})
+	if err != nil {
+		fmt.Printf("Could not marshal command body: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		fmt.Printf("Could not create command request: %s\n", err.Error())
+		os.Exit(1)
+	}
+	req.Header.Set("content-type", "application/json")
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	var cmdResp proxy.CommandResponse
+	err = json.Unmarshal(respBody, &cmdResp)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if cmdResp.Body != "" {
+		fmt.Println(cmdResp.Body)
+	}
+	if cmdResp.Err != "" {
+		fmt.Println(cmdResp.Err)
+	}
+}
+
 func printUsage() {
 	fmt.Printf("Usage: %s COMMAND\n\n", os.Args[0])
-	fmt.Println("s|stats\tShow statistics about all instances")
+	fmt.Println("\ts|stats\tShow statistics about all instances")
+	fmt.Println("\tu|update\tUpdate the list of instances")
+	fmt.Println()
 }
 
 func Run() {
@@ -111,6 +156,11 @@ func Run() {
 	switch os.Args[1] {
 	case "s", "stats":
 		doStats()
+	case "u", "update":
+		doUpdate()
+	default:
+		printUsage()
+		os.Exit(1)
 	}
 
 	if !isInstanceRunning() {
