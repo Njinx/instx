@@ -35,10 +35,10 @@ func schoolScaleToInt(grade string) int {
 }
 
 type Timings struct {
-	Initial   float64
-	Search    float64
-	Google    float64
-	Wikipedia float64
+	Initial   float64 `json:"initial"`
+	Search    float64 `json:"search"`
+	Google    float64 `json:"google"`
+	Wikipedia float64 `json:"wikipedia"`
 }
 
 func (s *Timings) String() string {
@@ -50,8 +50,8 @@ func (s *Timings) String() string {
 }
 
 type Instance struct {
-	Url     string
-	Timings Timings
+	Url     string  `json:"url"`
+	Timings Timings `json:"timings"`
 }
 
 func (s *Instance) String() string {
@@ -243,12 +243,12 @@ func visitInstance(k []byte, v *fastjson.Value) {
 }
 
 type Canidate struct {
-	Instance
-	score float64
+	Instance `json:"instance"`
+	Score    float64 `json:"score"`
 }
 
 func (s *Canidate) String() string {
-	return fmt.Sprintf("[%0.2f] %s", s.score, s.Instance.String())
+	return fmt.Sprintf("[%0.2f] %s", s.Score, s.Instance.String())
 }
 
 type Canidates struct {
@@ -259,6 +259,27 @@ func NewCanidates() Canidates {
 	return Canidates{
 		list.New(),
 	}
+}
+
+// Canidates struct with primitive array type
+type CanidatesMarshalable struct {
+	List []Canidate `json:"canidates"`
+}
+
+func NewCanidatesMarshalable(canidates *Canidates) CanidatesMarshalable {
+	var marshalable CanidatesMarshalable
+
+	for canidate := canidates.Front(); canidate != nil; canidate = canidate.Next() {
+		val, ok := canidate.Value.(Canidate)
+		if !ok {
+			log.Printf("Can't cast value to Canidate.")
+			val = Canidate{}
+		}
+
+		marshalable.List = append(marshalable.List, val)
+	}
+
+	return marshalable
 }
 
 func (c *Canidates) Iterate(fn func(canidate *Canidate) bool) {
@@ -313,7 +334,7 @@ func (c *Canidates) Sort() {
 	for current != nil {
 		index := current.Next()
 		for index != nil {
-			if current.Value.(Canidate).score > index.Value.(Canidate).score {
+			if current.Value.(Canidate).Score > index.Value.(Canidate).Score {
 				temp := current.Value
 				current.Value = index.Value
 				index.Value = temp

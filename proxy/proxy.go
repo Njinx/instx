@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -78,7 +79,7 @@ func serveFile(w http.ResponseWriter, req *http.Request, path string, mime strin
 	w.Header().Add("date", time.Now().Format(time.RFC1123))
 	w.Header().Add("expires", time.Now().Format(time.RFC1123))
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	var buf bytes.Buffer
 	tmpl.Execute(&buf, tmpl)
@@ -100,10 +101,26 @@ func getStartedHandler(w http.ResponseWriter, req *http.Request) {
 const PING_MESSAGE = "instx"
 
 func pingHandler(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	resp := fmt.Sprintf("%s;%d", PING_MESSAGE, os.Getpid())
 	w.Write([]byte(resp))
+}
+
+func statsHandler(w http.ResponseWriter, req *http.Request) {
+	updatedCanidatesMutex.Lock()
+
+	canidates := updater.NewCanidatesMarshalable(updatedCanidates)
+	json, err := json.Marshal(canidates)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	updatedCanidatesMutex.Unlock()
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(json)
 }
 
 func parsePreferences() {
@@ -141,6 +158,7 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 	http.HandleFunc("/opensearch.xml", openSearchXmlHandler)
 	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/ping", pingHandler)
+	http.HandleFunc("/stats", statsHandler)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
