@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -69,7 +70,29 @@ func getStats() updater.CanidatesMarshalable {
 func doStats() {
 	canidates := getStats()
 
-	fmt.Println(canidates)
+	latText := func(latency float64) string {
+		epsilon := math.Nextafter(1, 2) - 1
+		if latency > epsilon {
+			return fmt.Sprintf("%0.2fs", latency)
+		} else {
+			return "N/A"
+		}
+	}
+
+	for _, canidate := range canidates.List {
+		fmt.Printf("[%0.2f] %s", canidate.Score, canidate.Url)
+		if canidate.IsCurrent {
+			fmt.Println(" (In Use)")
+		} else {
+			fmt.Println()
+		}
+
+		fmt.Println("Latency:")
+		fmt.Printf("  - Initial:\t%s\n", latText(canidate.Timings.Initial))
+		fmt.Printf("  - Search:\t%s\n", latText(canidate.Timings.Search))
+		fmt.Printf("  - Google:\t%s\n", latText(canidate.Timings.Google))
+		fmt.Printf("  - Wikipedia:\t%0s\n", latText(canidate.Timings.Wikipedia))
+	}
 }
 
 func printUsage() {
