@@ -20,6 +20,11 @@ A client-side service that automatically updates the SearX(NG) instance you use 
 3. Set "InstX" as the default search engine in your browser
 ![Set as default search engine](./images/ff_default_search_engine.png)
 
+### Instxctl
+InstX comes bundled with a utility called instxctl that can do things such as query instx for instance statistics, force an update of the instance list, etc.
+
+To access instxctl simply make a copy or symbolic link of the instx binary and rename it to something that includes the string "instxctl". This new binary can now be run via the command line in instxctl mode.
+
 ## Configuration
 The default config file is located at `~/.config/instx.yaml` on Linux and `%appdata%/instx/instx.yaml` on Windows but can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
 
