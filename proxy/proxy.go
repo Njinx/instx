@@ -2,12 +2,10 @@ package proxy
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	urllib "net/url"
-	"os"
 	"sync"
 	"time"
 
@@ -57,30 +55,6 @@ func getUrl() string {
 	return ret
 }
 
-func redirectHandler(w http.ResponseWriter, req *http.Request) {
-	url := getUrl()
-
-	var craftedUrl string
-	if len(preferencesData) > 0 {
-		craftedUrl = fmt.Sprintf(
-			"%s%s&preferences=%s",
-			url,
-			req.RequestURI,
-			preferencesData)
-	} else {
-		craftedUrl = fmt.Sprintf("%s%s", url, req.RequestURI)
-	}
-
-	w.Header().Add("location", craftedUrl)
-	w.Header().Add("content-type", "text/html; charset=UTF-8")
-	w.Header().Add("date", time.Now().Format(time.RFC1123))
-	w.Header().Add("expires", time.Now().Format(time.RFC1123))
-
-	w.WriteHeader(302)
-
-	w.Write([]byte(fmt.Sprintf(REDIRECT_HTML_FMT, craftedUrl)))
-}
-
 func serveFile(w http.ResponseWriter, req *http.Request, path string, mime string) {
 	tmpl, err := vfs.GetFile(path)
 	if err != nil {
@@ -98,43 +72,6 @@ func serveFile(w http.ResponseWriter, req *http.Request, path string, mime strin
 	var buf bytes.Buffer
 	tmpl.Execute(&buf, tmpl)
 	w.Write(buf.Bytes())
-}
-
-func openSearchXmlHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/opensearch.xml", "application/opensearchdescription+xml")
-}
-
-func faviconHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/favicon.ico", "image/x-icon")
-}
-
-func getStartedHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/getstarted", "text/html")
-}
-
-const PING_MESSAGE = "instx"
-
-func pingHandler(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(http.StatusOK)
-
-	resp := fmt.Sprintf("%s;%d", PING_MESSAGE, os.Getpid())
-	w.Write([]byte(resp))
-}
-
-func statsHandler(w http.ResponseWriter, req *http.Request) {
-	updatedCanidatesMutex.Lock()
-
-	canidates := updater.NewCanidatesMarshalable(updatedCanidates)
-	json, err := json.Marshal(canidates)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	updatedCanidatesMutex.Unlock()
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(json)
 }
 
 func parsePreferences() {
@@ -173,6 +110,7 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/stats", statsHandler)
+	http.HandleFunc("/cmd", commandHandler)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
