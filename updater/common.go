@@ -243,8 +243,9 @@ func visitInstance(k []byte, v *fastjson.Value) {
 }
 
 type Canidate struct {
-	Instance `json:"instance"`
-	Score    float64 `json:"score"`
+	Instance  `json:"instance"`
+	Score     float64 `json:"score"`
+	IsCurrent bool    `json:"is_current"`
 }
 
 func (s *Canidate) String() string {

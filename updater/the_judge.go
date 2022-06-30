@@ -40,7 +40,11 @@ func findCanidates(instances *Instances) Canidates {
 		score := timings.Initial/conf.InitialRespWeight + timings.Search/conf.SearchRespWeight + timings.Google/conf.GoogleSearchRespWeight + timings.Wikipedia/conf.WikipediaSearchRespWeight
 		score = math.Floor(score*100) / 100
 
-		canidates.PushBack(Canidate{inst, score})
+		canidates.PushBack(Canidate{
+			inst,
+			score,
+			false,
+		})
 	}
 
 	// Now that we've weeded out the bad instances, lets conduct some actual latency

@@ -26,6 +26,7 @@ func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 			Url: config.ParseConfig().DefaultInstance,
 		},
 		0.0,
+		true,
 	})
 	updatedCanidatesMutex.Unlock()
 

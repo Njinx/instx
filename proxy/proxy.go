@@ -34,10 +34,24 @@ var preferencesData string
 func getUrl() string {
 	var ret string
 	if updatedCanidates.Len() == 0 {
+		log.Printf("A valid instance wasn't set... This should never happen!")
 		ret = config.ParseConfig().DefaultInstance
 	} else {
+
+		// Set the previous canidate as no longer in use
+		updatedCanidates.Iterate(func(canidate *updater.Canidate) bool {
+			if canidate.IsCurrent {
+				canidate.IsCurrent = false
+				return true
+			} else {
+				return false
+			}
+		})
+
 		updatedCanidatesMutex.Lock()
-		ret = updatedCanidates.Get(0).Url
+		canidate := updatedCanidates.Get(0)
+		ret = canidate.Url
+		canidate.IsCurrent = true
 		updatedCanidatesMutex.Unlock()
 	}
 	return ret
