@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 func callCommand(key string) (string, error) {
 	var commands = map[string]func() (string, error){
 		"update": cmdUpdate,
+		"stats":  cmdStats,
 	}
 
 	fn, ok := commands[key]
@@ -28,10 +30,24 @@ func cmdUpdate() (string, error) {
 	}
 }
 
+func cmdStats() (string, error) {
+	updatedCanidatesMutex.Lock()
+
+	canidates := updater.NewCanidatesMarshalable(updatedCanidates)
+	json, err := json.Marshal(canidates)
+	if err != nil {
+		return "", err
+	}
+
+	updatedCanidatesMutex.Unlock()
+
+	return string(json), nil
+}
+
 type ErrInvalidCommand struct {
-	cmdName string
+	Name string
 }
 
 func (err *ErrInvalidCommand) Error() string {
-	return fmt.Sprintf("Invalid command: \"%s\"", err.cmdName)
+	return fmt.Sprintf("Invalid command: \"%s\"", err.Name)
 }

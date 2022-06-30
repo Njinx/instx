@@ -109,7 +109,6 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 	http.HandleFunc("/opensearch.xml", openSearchXmlHandler)
 	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/ping", pingHandler)
-	http.HandleFunc("/stats", statsHandler)
 	http.HandleFunc("/cmd", commandHandler)
 
 	err := http.ListenAndServe(":8080", nil)

@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"gitlab.com/Njinx/instx/updater"
 )
 
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
@@ -57,22 +55,6 @@ func pingHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(resp))
 }
 
-func statsHandler(w http.ResponseWriter, req *http.Request) {
-	updatedCanidatesMutex.Lock()
-
-	canidates := updater.NewCanidatesMarshalable(updatedCanidates)
-	json, err := json.Marshal(canidates)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-
-	updatedCanidatesMutex.Unlock()
-
-	w.Header().Add("tontent-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(json)
-}
-
 type CommandRequest struct {
 	Name string `json:"name"`
 	Body string `json:"body"`
@@ -94,6 +76,7 @@ func commandHandler(w http.ResponseWriter, req *http.Request) {
 	err = json.Unmarshal(rawBody, &commandRequest)
 	if err != nil {
 		fmt.Printf("Could not parse command JSON: %s\n", err.Error())
+		fmt.Printf("JSON: %s\n", rawBody)
 		return
 	}
 

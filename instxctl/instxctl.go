@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"gitlab.com/Njinx/instx/config"
@@ -47,30 +48,61 @@ func isInstanceRunning() bool {
 	return false
 }
 
-func getStats() updater.CanidatesMarshalable {
-	url := fmt.Sprintf("%s/stats", getInstXUrl())
-
-	resp, err := http.Get(url)
+func sendCommand(cmdReq *proxy.CommandRequest) (*proxy.CommandResponse, error) {
+	match, err := regexp.Match(`^[a-z]*$`, []byte(cmdReq.Name))
 	if err != nil {
-		log.Fatalf("Could not fetch \"%s\": %s\n", url, err.Error())
+		return nil, err
+	}
+	if !match {
+		return nil, &proxy.ErrInvalidCommand{Name: cmdReq.Name}
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	url := fmt.Sprintf("%s/cmd", getInstXUrl())
+
+	reqBody, err := json.Marshal(cmdReq)
 	if err != nil {
-		log.Fatalf("Could not read response body: %s\n", err.Error())
+		return nil, err
 	}
 
-	canidatesMarshalable := updater.CanidatesMarshalable{}
-	if err := json.Unmarshal(body, &canidatesMarshalable); err != nil {
-		log.Fatalln("Could not marshal stats JSON.")
-		os.Exit(1)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("content-type", "application/json")
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
 	}
 
-	return canidatesMarshalable
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var cmdResp proxy.CommandResponse
+	err = json.Unmarshal(respBody, &cmdResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cmdResp, nil
 }
 
 func doStats() {
-	canidates := getStats()
+	cmdResp, err := sendCommand(&proxy.CommandRequest{
+		Name: "stats",
+		Body: "",
+	})
+	if err != nil {
+		log.Fatalf("Failed to send command: %s\n", err.Error())
+	}
+
+	canidates := updater.CanidatesMarshalable{}
+	if err := json.Unmarshal([]byte(cmdResp.Body), &canidates); err != nil {
+		log.Fatalf("Could not unmarshal stats JSON: %s", err.Error())
+	}
 
 	latText := func(latency float64) string {
 		epsilon := math.Nextafter(1, 2) - 1
@@ -98,36 +130,12 @@ func doStats() {
 }
 
 func doUpdate() {
-	url := fmt.Sprintf("%s/cmd", getInstXUrl())
-
-	reqBody, err := json.Marshal(&proxy.CommandRequest{Name: "update"})
+	cmdResp, err := sendCommand(&proxy.CommandRequest{
+		Name: "update",
+		Body: "",
+	})
 	if err != nil {
-		fmt.Printf("Could not marshal command body: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer(reqBody))
-	if err != nil {
-		fmt.Printf("Could not create command request: %s\n", err.Error())
-		os.Exit(1)
-	}
-	req.Header.Set("content-type", "application/json")
-
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	var cmdResp proxy.CommandResponse
-	err = json.Unmarshal(respBody, &cmdResp)
-	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("Failed to send command: %s\n", err.Error())
 	}
 
 	if cmdResp.Body != "" {
