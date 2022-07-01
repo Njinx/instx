@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	urllib "net/url"
 	"strings"
 	"time"
@@ -19,6 +20,18 @@ func (e *ErrInvalidValue) Error() string {
 		DEFAULT_CONFIG_FILE, e.key, e.given, e.accepted)
 }
 
+type ErrCouldNotBindPort struct {
+	key   string
+	given string
+	err   error
+}
+
+func (e *ErrCouldNotBindPort) Error() string {
+	return fmt.Sprintf(
+		"[%s] Unable to bind to port \"%s\" specified by \"%s\": %s",
+		DEFAULT_CONFIG_FILE, e.given, e.key, e.err.Error())
+}
+
 // Validate instx.yaml
 func (c *Config) validateConfig() []error {
 	errorArray := make([]error, 0, 64)
@@ -28,6 +41,15 @@ func (c *Config) validateConfig() []error {
 			key:      "default_instance",
 			given:    c.DefaultInstance,
 			accepted: "Any valid URL (accepted by net.url.Parse)",
+		})
+	}
+
+	// NOTE [instxctl]: Disable this check when in instxctl mode
+	if err := tryBindToPort(c.Proxy.Port); err != nil {
+		errorArray = append(errorArray, &ErrCouldNotBindPort{
+			key:   "proxy.port",
+			given: fmt.Sprint(c.Proxy.Port),
+			err:   err,
 		})
 	}
 
@@ -170,4 +192,14 @@ func (c *Config) validateConfig() []error {
 	}
 
 	return errorArray
+}
+
+// Attempt to bind to port. Successful if return is nil.
+func tryBindToPort(port int) error {
+	conn, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return err
+	}
+	err = conn.Close()
+	return err
 }
