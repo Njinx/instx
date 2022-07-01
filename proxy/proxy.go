@@ -131,7 +131,9 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/cmd", commandHandler)
 
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(
+		fmt.Sprintf(":%d", config.ParseConfig().Proxy.Port),
+		nil)
 	if err != nil {
 		log.Fatal("Could not create HTTP server: ", err)
 	}
