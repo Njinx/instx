@@ -7,23 +7,24 @@ import (
 	"time"
 )
 
-type InvalidValue struct {
+type ErrInvalidValue struct {
 	key      string
 	given    string
 	accepted string
 }
 
-func (e *InvalidValue) Error() string {
+func (e *ErrInvalidValue) Error() string {
 	return fmt.Sprintf(
 		"[%s] Invalid value for \"%s\": \"%s\". Accepted: %s",
 		DEFAULT_CONFIG_FILE, e.key, e.given, e.accepted)
 }
 
+// Validate instx.yaml
 func (c *Config) validateConfig() []error {
-	errorArray := make([]error, 0, 32)
+	errorArray := make([]error, 0, 64)
 
 	if _, err := urllib.ParseRequestURI(c.DefaultInstance); err != nil {
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "default_instance",
 			given:    c.DefaultInstance,
 			accepted: "Any valid URL (accepted by net.url.Parse)",
@@ -31,7 +32,7 @@ func (c *Config) validateConfig() []error {
 	}
 
 	if c.Proxy.Port < 0 || c.Proxy.Port > 65535 {
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "proxy.port",
 			given:    fmt.Sprint(c.Proxy.Port),
 			accepted: "Any valid TCP port number.",
@@ -41,7 +42,7 @@ func (c *Config) validateConfig() []error {
 	minTime := int64(0)
 	maxTime := int64(^uint64(0)>>1) / int64(time.Minute)
 	if c.Updater.UpdateInterval < minTime || c.Updater.UpdateInterval > maxTime {
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "updater.update_interval",
 			given:    fmt.Sprint(c.Proxy.Port),
 			accepted: fmt.Sprintf("Any number (in minutes) from %d-%d.", minTime, maxTime),
@@ -50,7 +51,7 @@ func (c *Config) validateConfig() []error {
 
 	respWeightHelper := func(k string, v float64) {
 		if v <= 0 || v >= 2 {
-			errorArray = append(errorArray, &InvalidValue{
+			errorArray = append(errorArray, &ErrInvalidValue{
 				key:      k,
 				given:    fmt.Sprint(v),
 				accepted: "Any number n: 0 < n < 2. Check the README for more information.",
@@ -105,14 +106,14 @@ func (c *Config) validateConfig() []error {
 	}
 
 	if !isLetterGrade(c.Updater.Criteria.MinimumCspGrade) {
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "updater.criteria.minimum_csp_grade",
 			given:    c.Updater.Criteria.MinimumCspGrade,
 			accepted: "A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F",
 		})
 	}
 	if !isLetterGrade(c.Updater.Criteria.MinimumTlsGrade) {
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "updater.criteria.minimum_tls_grade",
 			given:    c.Updater.Criteria.MinimumTlsGrade,
 			accepted: "A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F",
@@ -134,7 +135,7 @@ func (c *Config) validateConfig() []error {
 		case "👁️":
 			continue
 		default:
-			errorArray = append(errorArray, &InvalidValue{
+			errorArray = append(errorArray, &ErrInvalidValue{
 				key:      "updater.criteria.allowed_http_grades",
 				given:    strings.Join(c.Updater.Criteria.AllowedHttpGrades, ", "),
 				accepted: "Check the README.",
@@ -150,7 +151,7 @@ func (c *Config) validateConfig() []error {
 	case "impartial":
 		break
 	default:
-		errorArray = append(errorArray, &InvalidValue{
+		errorArray = append(errorArray, &ErrInvalidValue{
 			key:      "updater.criteria.searxng_preference",
 			given:    c.Updater.Criteria.SearxngPreference,
 			accepted: "required, forbidden, impartial. Check the README for more information.",
@@ -160,7 +161,7 @@ func (c *Config) validateConfig() []error {
 	for i, inst := range c.Updater.InstanceBlacklist {
 		url, err := urllib.Parse(inst)
 		if err != nil || len(url.Host) == 0 {
-			errorArray = append(errorArray, &InvalidValue{
+			errorArray = append(errorArray, &ErrInvalidValue{
 				key:      fmt.Sprintf("updater.instance_blacklist[%d]", i),
 				given:    inst,
 				accepted: "Any valid URL (net.url.Parse)",

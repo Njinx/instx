@@ -7,6 +7,7 @@ import (
 	"gitlab.com/Njinx/instx/config"
 )
 
+// Update the instances list
 func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	instances := NewInstances("https://searx.space/data/instances.json")
 	canidates := findCanidates(&instances)
@@ -16,6 +17,7 @@ func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.
 	updatedCanidatesMutex.Unlock()
 }
 
+// Start the updater loop
 func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 
 	// Since the updater hasn't actually run yet, give the proxy the default

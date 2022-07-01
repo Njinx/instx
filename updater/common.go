@@ -17,6 +17,7 @@ import (
 	"gitlab.com/Njinx/instx/config"
 )
 
+// Convert school grade letters to 0-100 values
 func schoolScaleToInt(grade string) int {
 	GRADE_CHART := map[string]int{
 		"A+": 100, "A": 95, "A-": 90,
@@ -34,6 +35,9 @@ func schoolScaleToInt(grade string) int {
 	}
 }
 
+// Instance response times as specified here: https://searx.space#help-responsetime.
+// "Timings" is synonymous with "Latency" in this project. Not sure why
+// I picked the former.
 type Timings struct {
 	Initial   float64
 	Search    float64
@@ -49,6 +53,7 @@ func (s *Timings) String() string {
 		s.Wikipedia)
 }
 
+// TODO: Merge Instance(s) and Canidate(s) structs
 type Instance struct {
 	Url     string
 	Timings Timings
@@ -70,9 +75,11 @@ func NewInstances(instancesUrl string) Instances {
 	return ret
 }
 
-// TODO: Remove outliers
+// TODO: Remove outliers from calculations
+// Get the average latency for all instances
 func (s *Instances) getTimingAvgs() Timings {
 	avgs := Timings{0.0, 0.0, 0.0, 0.0}
+
 	var initialI float64
 	var searchI float64
 	var googleI float64
@@ -121,6 +128,7 @@ func (s *Instances) String() string {
 
 var instances Instances
 
+// Get instances data from https://searx.space
 func parseSearxSpaceResponse(url string) (Instances, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -133,6 +141,7 @@ func parseSearxSpaceResponse(url string) (Instances, error) {
 		return Instances{}, err
 	}
 
+	// Since our JSON is irregular (URLs being used as keys) we can't marshal it
 	var parser fastjson.Parser
 	jsonData, err := parser.Parse(string(jsonResp))
 	if err != nil {
@@ -143,7 +152,10 @@ func parseSearxSpaceResponse(url string) (Instances, error) {
 	return instances, nil
 }
 
+// For each instance in searx.space response JSON...
 func visitInstance(k []byte, v *fastjson.Value) {
+
+	// If latency data doesn't exist, just give up ffs
 	if !v.Exists("timing") {
 		return
 	}
@@ -229,11 +241,16 @@ func visitInstance(k []byte, v *fastjson.Value) {
 		}
 	}
 
+	// TODO: Sometimes latency isn't provided, so account for that
 	timings := Timings{
-		Initial:   float64(negativeOneOnError(v.GetFloat64("timing", "initial", "all", "value"))),
-		Search:    float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
-		Google:    float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
-		Wikipedia: float64(negativeOneOnError(v.GetFloat64("timing", "search", "all", "median"))),
+		Initial: float64(negativeOneOnError(
+			v.GetFloat64("timing", "initial", "all", "value"))),
+		Search: float64(negativeOneOnError(
+			v.GetFloat64("timing", "search", "all", "median"))),
+		Google: float64(negativeOneOnError(
+			v.GetFloat64("timing", "search", "all", "median"))),
+		Wikipedia: float64(negativeOneOnError(
+			v.GetFloat64("timing", "search", "all", "median"))),
 	}
 
 	instances.instanceList = append(instances.instanceList, Instance{
@@ -261,6 +278,7 @@ func NewCanidates() Canidates {
 	}
 }
 
+// Iterate over canidates
 func (c *Canidates) Iterate(fn func(canidate *Canidate) bool) {
 	for elem := c.Front(); elem != nil; elem = elem.Next() {
 		if canidate, ok := elem.Value.(Canidate); ok {
@@ -271,6 +289,7 @@ func (c *Canidates) Iterate(fn func(canidate *Canidate) bool) {
 	}
 }
 
+// Iterate forward starting from the front and backward starting from the end.
 func (c *Canidates) DoubleIterate(fn func(canidate1 *Canidate, canidate2 *Canidate) bool) {
 	for elem1, elem2 := c.Front(), c.Back(); elem1 != nil && elem2 != nil; elem1, elem2 = elem1.Next(), elem2.Prev() {
 		if canidate1, ok1 := elem1.Value.(Canidate); ok1 {
@@ -282,15 +301,6 @@ func (c *Canidates) DoubleIterate(fn func(canidate1 *Canidate, canidate2 *Canida
 		}
 	}
 }
-
-/*func (c Canidates) Len() int {
-	var i int
-	c.Iterate(func(canidate *Canidate) bool {
-		i++
-		return false
-	})
-	return i
-}*/
 
 func (c Canidates) Get(i int) *Canidate {
 	var iElem *Canidate
@@ -308,22 +318,24 @@ func (c Canidates) Get(i int) *Canidate {
 	return iElem
 }
 
+// Sort canidates based on score (ascending)
 func (c *Canidates) Sort() {
 	current := c.Front()
 	for current != nil {
-		index := current.Next()
-		for index != nil {
-			if current.Value.(Canidate).score > index.Value.(Canidate).score {
+		next := current.Next()
+		for next != nil {
+			if current.Value.(Canidate).score > next.Value.(Canidate).score {
 				temp := current.Value
-				current.Value = index.Value
-				index.Value = temp
+				current.Value = next.Value
+				next.Value = temp
 			}
-			index = index.Next()
+			next = next.Next()
 		}
 		current = current.Next()
 	}
 }
 
+// Reverse the canidates list
 func (c *Canidates) Reverse() {
 	c.DoubleIterate(func(canidate1 *Canidate, canidate2 *Canidate) bool {
 		*canidate1, *canidate2 = *canidate2, *canidate1
@@ -338,6 +350,7 @@ type LatencyResponse struct {
 	packetLoss float64
 }
 
+// Helper function that conducts latency tests
 func doLatencyTestsEx(
 	urls []string,
 	count int,
@@ -346,13 +359,16 @@ func doLatencyTestsEx(
 	privilaged bool) []LatencyResponse {
 
 	var m sync.Mutex
+	var wg sync.WaitGroup
 	var ret []LatencyResponse
 
-	var wg sync.WaitGroup
 	for _, tmpUrl := range urls {
 		wg.Add(1)
+
+		// TODO: Figure out if this clone is really necessary
 		url := strings.Clone(tmpUrl)
 
+		// Don't block during latency tests
 		go func() {
 			resp := LatencyResponse{
 				hostname: url,
@@ -401,10 +417,16 @@ func doLatencyTestsEx(
 	return ret
 }
 
+// Basic latency test
 func doLatencyTests(urls []string) []LatencyResponse {
+
+	// 4 pings, 200ms apart, timeout after 1s
 	return doLatencyTestsEx(urls, 4, 200*time.Millisecond, 1*time.Second, false)
 }
 
+// More intensive latency test
 func doLatencyTestIntensive(url string) LatencyResponse {
-	return doLatencyTestsEx([]string{url}, 8, 2000*time.Millisecond, 4*time.Second, false)[0]
+
+	// 8 pings, 2s apart, timeout after 4s
+	return doLatencyTestsEx([]string{url}, 8, 2*time.Second, 4*time.Second, false)[0]
 }
