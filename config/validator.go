@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	urllib "net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -94,37 +95,13 @@ func (c *Config) validateConfig() []error {
 		"updater.advanced.wikipedia_search_resp_weight",
 		c.Updater.Advanced.WikipediaSearchRespWeight)
 
+	// Checks whether grade is a valid letter grade.
+	// Valid: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F
+	// Case-insensitive and does not care about surrounding whitespace.
+	//   Ex: "  A+ " matches but "  A + " does not.
 	isLetterGrade := func(grade string) bool {
-		switch grade {
-		case "A+":
-			return true
-		case "A":
-			return true
-		case "A-":
-			return true
-		case "B+":
-			return true
-		case "B":
-			return true
-		case "B-":
-			return true
-		case "C+":
-			return true
-		case "C":
-			return true
-		case "C-":
-			return true
-		case "D+":
-			return true
-		case "D":
-			return true
-		case "D-":
-			return true
-		case "F":
-			return true
-		default:
-			return false
-		}
+		re, _ := regexp.Compile(`^\s*(?:[a-dA-D][-+]?|[fF])\s*$`)
+		return re.Match([]byte(grade))
 	}
 
 	if !isLetterGrade(c.Updater.Criteria.MinimumCspGrade) {
