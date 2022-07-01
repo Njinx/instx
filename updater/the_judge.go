@@ -43,7 +43,11 @@ func findCanidates(instances *Instances) Canidates {
 		// Honest to God I have no idea what's happening here
 		score = math.Floor(score*100) / 100
 
-		canidates.PushBack(Canidate{inst, score})
+		canidates.PushBack(Canidate{
+			inst,
+			score,
+			false,
+		})
 	}
 
 	// Now that we've weeded out the bad instances, lets conduct some actual latency

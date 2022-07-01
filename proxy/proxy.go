@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	urllib "net/url"
-	"os"
 	"sync"
 	"time"
 
@@ -40,44 +39,29 @@ func getUrl() string {
 		log.Println("Zero valid instances were found. This isn't normal. Maybe searx.space is down?")
 		ret = config.ParseConfig().DefaultInstance
 	} else {
+
+		// Set the previous canidate as no longer in use
+		updatedCanidates.Iterate(func(canidate *updater.Canidate) bool {
+			if canidate.IsCurrent {
+				canidate.IsCurrent = false
+				return true
+			} else {
+				return false
+			}
+		})
+
 		updatedCanidatesMutex.Lock()
 
 		// Pick the first canidate. The reason the updater exports all canidates
 		// instead of just one is because we may want to do something like provide
 		// fallback instances in the future.
-		ret = updatedCanidates.Get(0).Url
+		canidate := updatedCanidates.Get(0)
+		ret = canidate.Url
+		canidate.IsCurrent = true
 
 		updatedCanidatesMutex.Unlock()
 	}
 	return ret
-}
-
-// Redirect the user to the current instance with their search query
-// and preferences URL.
-func redirectHandler(w http.ResponseWriter, req *http.Request) {
-	url := getUrl()
-
-	var craftedUrl string
-	if len(preferencesData) > 0 {
-		craftedUrl = fmt.Sprintf(
-			"%s%s&preferences=%s",
-			url,
-			req.RequestURI,
-			preferencesData)
-	} else {
-		craftedUrl = fmt.Sprintf("%s%s", url, req.RequestURI)
-	}
-
-	w.Header().Add("location", craftedUrl)
-	w.Header().Add("content-type", "text/html; charset=UTF-8")
-
-	// The page expires immediately to prevent caching or other funny stuff
-	w.Header().Add("date", time.Now().Format(time.RFC1123))
-	w.Header().Add("expires", time.Now().Format(time.RFC1123))
-
-	w.WriteHeader(http.StatusFound)
-
-	w.Write([]byte(fmt.Sprintf(REDIRECT_HTML_FMT, craftedUrl)))
 }
 
 // Serve static files
@@ -100,31 +84,6 @@ func serveFile(w http.ResponseWriter, req *http.Request, path string, mime strin
 	var buf bytes.Buffer
 	tmpl.Execute(&buf, tmpl)
 	w.Write(buf.Bytes())
-}
-
-func openSearchXmlHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/opensearch.xml", "application/opensearchdescription+xml")
-}
-
-func faviconHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/favicon.ico", "image/x-icon")
-}
-
-func getStartedHandler(w http.ResponseWriter, req *http.Request) {
-	serveFile(w, req, "/getstarted", "text/html")
-}
-
-const PING_MESSAGE = "instx"
-
-// Endpoint used to test if instx is running.
-// Responds with "instx;[PID]"
-func pingHandler(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(http.StatusOK)
-
-	w.Header().Add("content-type", "text/plain")
-
-	resp := fmt.Sprintf("%s;%d", PING_MESSAGE, os.Getpid())
-	w.Write([]byte(resp))
 }
 
 // Extract the GET parameter from `preferences_url`
@@ -170,8 +129,11 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 	http.HandleFunc("/opensearch.xml", openSearchXmlHandler)
 	http.HandleFunc("/favicon.ico", faviconHandler)
 	http.HandleFunc("/ping", pingHandler)
+	http.HandleFunc("/cmd", commandHandler)
 
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(
+		fmt.Sprintf(":%d", config.ParseConfig().Proxy.Port),
+		nil)
 	if err != nil {
 		log.Fatal("Could not create HTTP server: ", err)
 	}

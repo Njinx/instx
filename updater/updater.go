@@ -17,8 +17,30 @@ func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.
 	updatedCanidatesMutex.Unlock()
 }
 
+type ErrUpdateInProgress struct{}
+
+func (err *ErrUpdateInProgress) Error() string {
+	return "Update in progress"
+}
+
+var updateInProgress bool
+
+var forceUpdateChan chan bool
+
+func ForceUpdate() error {
+	if updateInProgress {
+		return &ErrUpdateInProgress{}
+	} else {
+		forceUpdateChan <- true
+		return nil
+	}
+}
+
 // Start the updater loop
 func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
+
+	forceUpdateChan = make(chan bool)
+	updateInProgress = false
 
 	// Since the updater hasn't actually run yet, give the proxy the default
 	// instance (as a dummy Canidates object)
@@ -28,13 +50,21 @@ func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 			Url: config.ParseConfig().DefaultInstance,
 		},
 		0.0,
+		true,
 	})
 	updatedCanidatesMutex.Unlock()
 
 	updateInterval := time.Duration(config.ParseConfig().Updater.UpdateInterval)
 	for {
+		updateInProgress = true
 		updateBestServers(updatedCanidates, updatedCanidatesMutex)
-		_ = updateInterval
-		time.Sleep(updateInterval * time.Minute)
+		updateInProgress = false
+
+		// Wait $updateInterval minutes or until an update is forced
+		select {
+		case <-forceUpdateChan:
+			forceUpdateChan <- false
+		case <-time.After(updateInterval * time.Minute):
+		}
 	}
 }
