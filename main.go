@@ -1,15 +1,13 @@
 package main
 
 import (
-	"os"
-	"runtime"
-	"strings"
 	"sync"
 
 	"gitlab.com/Njinx/instx/config"
 	"gitlab.com/Njinx/instx/instxctl"
 	"gitlab.com/Njinx/instx/proxy"
 	"gitlab.com/Njinx/instx/updater"
+	"gitlab.com/Njinx/instx/util"
 )
 
 func main() {
@@ -17,18 +15,9 @@ func main() {
 	// Parse the config before doing anything concurrent
 	config.ParseConfig()
 
-	// Run in instxctl mode
-	var containsInstxctl bool
-	if runtime.GOOS == "windows" {
-		// Windows filenames are case-insensitive so we should respect that
-		containsInstxctl = strings.Contains(strings.ToLower(os.Args[0]), "instxctl")
-	} else {
-		containsInstxctl = strings.Contains(os.Args[0], "instxctl")
-	}
-
-	if containsInstxctl {
+	if util.IsInstxCtlMode() {
 		instxctl.Run()
-	} else { // Run in instx mode
+	} else {
 		var updatedCanidatesMutex sync.Mutex
 		updatedCanidates := updater.NewCanidates()
 

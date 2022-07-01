@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"gitlab.com/Njinx/instx/util"
 )
 
 type ErrInvalidValue struct {
@@ -45,13 +47,14 @@ func (c *Config) validateConfig() []error {
 		})
 	}
 
-	// NOTE [instxctl]: Disable this check when in instxctl mode
-	if err := tryBindToPort(c.Proxy.Port); err != nil {
-		errorArray = append(errorArray, &ErrCouldNotBindPort{
-			key:   "proxy.port",
-			given: fmt.Sprint(c.Proxy.Port),
-			err:   err,
-		})
+	if !util.IsInstxCtlMode() {
+		if err := tryBindToPort(c.Proxy.Port); err != nil {
+			errorArray = append(errorArray, &ErrCouldNotBindPort{
+				key:   "proxy.port",
+				given: fmt.Sprint(c.Proxy.Port),
+				err:   err,
+			})
+		}
 	}
 
 	if c.Proxy.Port < 0 || c.Proxy.Port > 65535 {
