@@ -7,6 +7,7 @@ import (
 	"gitlab.com/Njinx/instx/config"
 )
 
+// Checks whether or not $latency counts as an outlier
 func isOutlier(avgs float64, latency float64, weight float64) bool {
 	outlierMultipler := config.ParseConfig().Updater.Advanced.OutlierMultiplier
 
@@ -38,6 +39,8 @@ func findCanidates(instances *Instances) Canidates {
 		}
 
 		score := timings.Initial/conf.InitialRespWeight + timings.Search/conf.SearchRespWeight + timings.Google/conf.GoogleSearchRespWeight + timings.Wikipedia/conf.WikipediaSearchRespWeight
+
+		// Honest to God I have no idea what's happening here
 		score = math.Floor(score*100) / 100
 
 		canidates.PushBack(Canidate{
@@ -69,7 +72,12 @@ func findCanidates(instances *Instances) Canidates {
 	return canidates
 }
 
+// Since our data from searx.space might be old, we should conduct
+// real-time tests.
 func refineTestCanidates(testResults []LatencyResponse, canidates *Canidates) {
+
+	// TODO: Refactor latency test functions so this isn't needed
+	// url -> Canidate{}
 	resultToCanidate := func(result LatencyResponse, canidates *Canidates) *Canidate {
 		var ret *Canidate
 		canidates.Iterate(func(canidate *Canidate) bool {
@@ -86,6 +94,8 @@ func refineTestCanidates(testResults []LatencyResponse, canidates *Canidates) {
 
 	newCanidates := NewCanidates()
 	for _, result := range testResults {
+
+		// If our URL isn't responding, do a more intensive latency test
 		if !result.isAlive {
 			intensiveResult := doLatencyTestIntensive(result.hostname)
 			result.isAlive = intensiveResult.isAlive

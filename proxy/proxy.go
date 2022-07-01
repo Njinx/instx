@@ -24,15 +24,19 @@ const REDIRECT_HTML_FMT = "<HTML><HEAD>" +
 
 var vfs resources.VFS
 
+// The list of current canidates to use
 var updatedCanidates *updater.Canidates
 var updatedCanidatesMutex *sync.Mutex
 
 var preferencesData string
 
+// Get the current instance URL
 func getUrl() string {
 	var ret string
+
+	// This is bad and shouldn't happen under normal circumstances
 	if updatedCanidates.Len() == 0 {
-		log.Printf("A valid instance wasn't set... This should never happen!")
+		log.Println("Zero valid instances were found. This isn't normal. Maybe searx.space is down?")
 		ret = config.ParseConfig().DefaultInstance
 	} else {
 
@@ -47,15 +51,23 @@ func getUrl() string {
 		})
 
 		updatedCanidatesMutex.Lock()
+
+		// Pick the first canidate. The reason the updater exports all canidates
+		// instead of just one is because we may want to do something like provide
+		// fallback instances in the future.
 		canidate := updatedCanidates.Get(0)
 		ret = canidate.Url
 		canidate.IsCurrent = true
+
 		updatedCanidatesMutex.Unlock()
 	}
 	return ret
 }
 
+// Serve static files
 func serveFile(w http.ResponseWriter, req *http.Request, path string, mime string) {
+
+	// Retrieve the file from the VFS
 	tmpl, err := vfs.GetFile(path)
 	if err != nil {
 		log.Printf("vfs.GetFile: %s\n", err)
@@ -74,6 +86,7 @@ func serveFile(w http.ResponseWriter, req *http.Request, path string, mime strin
 	w.Write(buf.Bytes())
 }
 
+// Extract the GET parameter from `preferences_url`
 func parsePreferences() {
 	preferencesRaw := config.ParseConfig().Proxy.PreferencesUrl
 	if len(preferencesRaw) == 0 {
@@ -81,8 +94,12 @@ func parsePreferences() {
 	}
 
 	preferencesUrl, err := urllib.Parse(preferencesRaw)
+
+	// It's not a huge deal if we can't page the preferences URL. Just return
+	// early, throw a warning, and continue program execution.
 	if err != nil {
 		log.Printf("Could not parse URL \"%s\": %s\n", preferencesRaw, err.Error())
+		return
 	}
 
 	params, ok := preferencesUrl.Query()["preferences"]
@@ -90,6 +107,9 @@ func parsePreferences() {
 		log.Println("Could not find the \"preferences\" parameter in preferences_url. Perhaps the URL is invalid.")
 		return
 	} else if len(params) > 1 {
+
+		// Warn if there's more than one `preferences` parameter, but continue
+		// and use the first occurrence.
 		log.Println("Too many \"preferences\" parameters in preferences_url. Perhaps the URL is invalid.")
 	}
 

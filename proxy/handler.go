@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Redirect the user to the current instance with their search query
+// and preferences URL.
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	url := getUrl()
 
@@ -48,6 +50,8 @@ func getStartedHandler(w http.ResponseWriter, req *http.Request) {
 
 const PING_MESSAGE = "instx"
 
+// Endpoint used to test if instx is running.
+// Responds with "instx;[PID]"
 func pingHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 

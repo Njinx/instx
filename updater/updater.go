@@ -7,6 +7,7 @@ import (
 	"gitlab.com/Njinx/instx/config"
 )
 
+// Update the instances list
 func updateBestServers(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 	instances := NewInstances("https://searx.space/data/instances.json")
 	canidates := findCanidates(&instances)
@@ -35,6 +36,7 @@ func ForceUpdate() error {
 	}
 }
 
+// Start the updater loop
 func Run(updatedCanidates *Canidates, updatedCanidatesMutex *sync.Mutex) {
 
 	forceUpdateChan = make(chan bool)
