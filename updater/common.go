@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	urllib "net/url"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -377,8 +378,7 @@ func doLatencyTestsEx(
 	urls []string,
 	count int,
 	interval time.Duration,
-	timeout time.Duration,
-	privilaged bool) []LatencyResponse {
+	timeout time.Duration) []LatencyResponse {
 
 	var m sync.Mutex
 	var wg sync.WaitGroup
@@ -414,7 +414,13 @@ func doLatencyTestsEx(
 			pinger.Count = count
 			pinger.Interval = interval
 			pinger.Timeout = timeout
-			pinger.SetPrivileged(privilaged)
+
+			// See: https://github.com/go-ping/ping#windows
+			if runtime.GOOS == "windows" {
+				pinger.SetPrivileged(true)
+			} else {
+				pinger.SetPrivileged(false)
+			}
 
 			err = pinger.Run()
 			if err != nil {
@@ -443,12 +449,12 @@ func doLatencyTestsEx(
 func doLatencyTests(urls []string) []LatencyResponse {
 
 	// 4 pings, 200ms apart, timeout after 1s
-	return doLatencyTestsEx(urls, 4, 200*time.Millisecond, 1*time.Second, false)
+	return doLatencyTestsEx(urls, 4, 200*time.Millisecond, 1*time.Second)
 }
 
 // More intensive latency test
 func doLatencyTestIntensive(url string) LatencyResponse {
 
 	// 8 pings, 2s apart, timeout after 4s
-	return doLatencyTestsEx([]string{url}, 8, 2*time.Second, 4*time.Second, false)[0]
+	return doLatencyTestsEx([]string{url}, 8, 2*time.Second, 4*time.Second)[0]
 }
