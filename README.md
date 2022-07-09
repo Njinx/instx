@@ -26,7 +26,7 @@ InstX comes bundled with a utility called instxctl that can do things such as qu
 To access instxctl simply make a copy or symbolic link of the instx binary and rename it to something that includes the string "instxctl". This new binary can now be run via the command line in instxctl mode.
 
 ## Configuration
-The default config file is located at `~/.config/instx.yaml` on Linux and `%appdata%/instx/instx.yaml` on Windows but can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
+The default config file is located at `~/.config/instx.yaml` on MacOS/Linux and `%appdata%/instx/instx.yaml` on Windows. This can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
 
 |Required|YAML Key|Description|Go Data Type|Default Value|
 |---|---|---|---|---|

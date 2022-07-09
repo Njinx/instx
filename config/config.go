@@ -113,16 +113,19 @@ func getConfigData() []byte {
 	}
 
 	// Try hardcoded path
-	localAppData, err := os.UserConfigDir()
-	if err != nil {
-		log.Fatalf("Could not get config dir: %s\n", err.Error())
-	}
-
 	var defaultPath string
 	if runtime.GOOS == "windows" {
-		defaultPath = filepath.Join(localAppData, "instx/", DEFAULT_CONFIG_FILE)
+		appData, err := os.UserConfigDir()
+		if err != nil {
+			log.Fatalf("Could not get config directory: %s\n", err.Error())
+		}
+		defaultPath = filepath.Join(appData, "instx/", DEFAULT_CONFIG_FILE)
 	} else {
-		defaultPath = filepath.Join(localAppData, DEFAULT_CONFIG_FILE)
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatalf("Could not get config directory: %s\n", err.Error())
+		}
+		defaultPath = filepath.Join(homeDir, ".config/", DEFAULT_CONFIG_FILE)
 	}
 
 	data, err := getConfigDataFromPath(defaultPath)
