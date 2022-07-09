@@ -45,49 +45,49 @@ type Config struct {
 	} `yaml:"updater"`
 }
 
-func createDefaultConfig(path string) (*os.File, error) {
+func createDefaultConfig(path string) error {
 	baseDir := filepath.Dir(path)
 	_, err := os.Stat(baseDir)
 
 	// Either the folder doesn't exist or we have an actual problem
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			os.MkdirAll(baseDir, 0755)
+			os.MkdirAll(baseDir, 0644)
 		} else {
-			return nil, err
+			return err
 		}
 	}
 
-	fd, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0644)
+	fd, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	configData, err := DEFAULT_CONFIG_FS.ReadFile(DEFAULT_CONFIG_FILE)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, err = fd.Write(configData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return fd, nil
+	fd.Close()
+	return nil
 }
 
 func getConfigDataFromPath(path string) ([]byte, error) {
-	var fd *os.File
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		fd, err = createDefaultConfig(path)
+		err = createDefaultConfig(path)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		fd, err = os.OpenFile(path, os.O_CREATE, 0644)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	fd, err := os.OpenFile(path, os.O_RDONLY, 0755)
+	if err != nil {
+		return nil, err
 	}
 
 	data, err := io.ReadAll(fd)
