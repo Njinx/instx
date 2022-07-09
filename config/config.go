@@ -120,7 +120,7 @@ func getConfigData() []byte {
 
 	var defaultPath string
 	if runtime.GOOS == "windows" {
-		defaultPath = filepath.Join(localAppData, "instx/", DEFAULT_CONFIG_FILE)
+		defaultPath = filepath.Join(localAppData, "instx\\", DEFAULT_CONFIG_FILE)
 	} else {
 		defaultPath = filepath.Join(localAppData, DEFAULT_CONFIG_FILE)
 	}
