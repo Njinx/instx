@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>usr.Njinx.instx</string>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>ProcessType</key>
+    <string>Background</string>
+	<key>Disabled</key>
+    <false/>
+	<key>EnvironmentVariables</key>
+    <dict>
+        <key>SEARX_SPACE_AUTOSELECTOR_CONFIG</key>
+           <string>/Users/USER/.config/instx.yaml</string>
+    </dict>
+	<key>ProgramArguments</key>
+    <array>
+      <string>/path/to/instx</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/USER/Library/Logs/usr.Njinx.instx.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/USER/Library/Logs/usr.Njinx.instx.err</string>
+    <key>Debug</key>
+    <true/>
+</dict>
+</plist>
