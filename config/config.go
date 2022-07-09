@@ -47,13 +47,15 @@ type Config struct {
 
 func createDefaultConfig(path string) (*os.File, error) {
 	baseDir := filepath.Dir(path)
-	info, err := os.Stat(baseDir)
-	if err != nil {
-		return nil, err
-	}
+	_, err := os.Stat(baseDir)
 
-	if !info.IsDir() {
-		os.MkdirAll(baseDir, 0755)
+	// Either the folder doesn't exist or we have an actual problem
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			os.MkdirAll(baseDir, 0755)
+		} else {
+			return nil, err
+		}
 	}
 
 	fd, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0644)
