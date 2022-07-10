@@ -6,3 +6,5 @@ flamegraph.svg
 bin/
 instx
 instxctl.bin
+instx.exe
+instxctl.exe
