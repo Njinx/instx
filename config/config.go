@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -98,41 +99,49 @@ func getConfigDataFromPath(path string) ([]byte, error) {
 	return data, nil
 }
 
-func getConfigData() []byte {
+var cachedConfigPath string
+
+// Get the config file path.
+// NOTE: Does not check if the config path is a valid file!
+func getConfigPath() string {
+
+	// Check cache
+	if cachedConfigPath != "" {
+		return cachedConfigPath
+	}
 
 	// Try environment variable
 	envPath := os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
 	if envPath != "" {
-		data, err := getConfigDataFromPath(envPath)
-		if err != nil {
-			log.Fatalf(
-				"Could not read config file at \"%s\": %s",
-				envPath, err.Error())
-		}
-		return data
+		cachedConfigPath = envPath
+		return envPath
 	}
 
 	// Try hardcoded path
-	var defaultPath string
 	if runtime.GOOS == "windows" {
 		appData, err := os.UserConfigDir()
 		if err != nil {
 			log.Fatalf("Could not get config directory: %s\n", err.Error())
 		}
-		defaultPath = filepath.Join(appData, "instx/", DEFAULT_CONFIG_FILE)
+		cachedConfigPath = appData
+		return filepath.Join(appData, "instx/", DEFAULT_CONFIG_FILE)
 	} else {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			log.Fatalf("Could not get config directory: %s\n", err.Error())
 		}
-		defaultPath = filepath.Join(homeDir, ".config/", DEFAULT_CONFIG_FILE)
+		cachedConfigPath = homeDir
+		return filepath.Join(homeDir, ".config/", DEFAULT_CONFIG_FILE)
 	}
+}
 
-	data, err := getConfigDataFromPath(defaultPath)
+func getConfigData() []byte {
+	configPath := getConfigPath()
+	data, err := getConfigDataFromPath(configPath)
 	if err != nil {
 		log.Fatalf(
 			"Could not read config file at \"%s\": %s",
-			defaultPath, err.Error())
+			configPath, err.Error())
 	}
 	return data
 }
@@ -158,6 +167,21 @@ func ParseConfig() Config {
 		for _, err := range errs {
 			log.Println(err.Error())
 		}
+
+		// If the config file was created within the last hour,
+		// display a helpful message.
+		if info, err := os.Stat(getConfigPath()); err == nil {
+			creationTime := getFileCreationTime(&info)
+
+			// getFileCreationTime() dummy function (config_generic.go) returns a "nil"
+			// time value, so don't display the message on unsupported platforms.
+			if !creationTime.IsZero() &&
+				(time.Since(creationTime) < time.Duration(time.Hour)) {
+
+				log.Println("[instx.yaml] This looks like a new configuration file. If this is your first time setting up please consult the README.")
+			}
+		}
+
 		os.Exit(1)
 	}
 
