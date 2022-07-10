@@ -4,14 +4,25 @@ A client-side service that automatically updates the SearX(NG) instance you use 
 
 ## Installation
 
-### Compiling
-1. Build with `go get` and `go build`
-2. Set `ExecStart` in `instx.service` to the instx binary and copy it to `~/.config/systemd/`
+### Linux
+1. Install [Golang](https://go.dev/)
+2. Build with `go build`
+3. Set `ExecStart` in `instx.service` to the instx binary location and copy it to `~/.config/systemd/`
+4. `systemctl --user daemon-reload`
+5. `systemctl --user enable instx`
+6. `systemctl --user start instx`
 
-### Start automatically
-1. `systemctl --user daemon-reload`
-2. `systemctl --user enable instx`
-3. `systemctl --user start instx`
+### MacOS
+1. Install [Golang](https://go.dev/) (`brew install go`)
+2. Build with `go build`
+3. Replace `/path/to/instx` and `USER` in `usr.Njinx.instx.plist` with their correct values
+4. Copy `usr.Njinx.instx.plist` to `~/Library/LaunchAgents/`
+5. Enable it with `launchctl load -w ~/Library/LaunchAgents/usr.Njinx.instx.plist`
+
+### Windows
+1. Install [Golang](https://go.dev/)
+2. Build with `go build`
+3. **TODO**
 
 ### Set as the default search engine
 1. Go to http://localhost:8080/getstarted
