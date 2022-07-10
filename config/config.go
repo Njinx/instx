@@ -123,16 +123,15 @@ func getConfigPath() string {
 		if err != nil {
 			log.Fatalf("Could not get config directory: %s\n", err.Error())
 		}
-		cachedConfigPath = appData
-		return filepath.Join(appData, "instx/", DEFAULT_CONFIG_FILE)
+		cachedConfigPath = filepath.Join(appData, "instx/", DEFAULT_CONFIG_FILE)
 	} else {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			log.Fatalf("Could not get config directory: %s\n", err.Error())
 		}
-		cachedConfigPath = homeDir
-		return filepath.Join(homeDir, ".config/", DEFAULT_CONFIG_FILE)
+		cachedConfigPath = filepath.Join(homeDir, ".config/", DEFAULT_CONFIG_FILE)
 	}
+	return cachedConfigPath
 }
 
 func getConfigData() []byte {
