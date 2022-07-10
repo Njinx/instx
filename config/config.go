@@ -114,8 +114,8 @@ func getConfigPath() string {
 
 	// Try $INSTX_CONFIG first, but fall back to $SEARX_SPACE_AUTOSELECTOR_CONFIG
 	// if it exists.
-	envPath := os.Getenv("INSTX_CONFIG")
-	if envPath != "" {
+	envPath, exists := os.LookupEnv("INSTX_CONFIG")
+	if exists {
 		cachedConfigPath = envPath
 		return envPath
 	}
@@ -123,8 +123,8 @@ func getConfigPath() string {
 	// SEARX_SPACE_AUTOSELECTOR_CONFIG wasn't changed alongside the project name:
 	//   SearxSpaceAutoselector -> Instx
 	// Display a deprecation notice if used.
-	envPath = os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
-	if envPath != "" {
+	envPath, exists = os.LookupEnv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
+	if exists {
 		log.Println("[Deprecation Notice] SEARX_SPACE_AUTOSELECTOR_CONFIG is now INSTX_CONFIG")
 		cachedConfigPath = envPath
 		return envPath
