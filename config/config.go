@@ -111,13 +111,27 @@ func getConfigPath() string {
 	}
 
 	// Try environment variable
-	envPath := os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
+
+	// Try $INSTX_CONFIG first, but fall back to $SEARX_SPACE_AUTOSELECTOR_CONFIG
+	// if it exists.
+	envPath := os.Getenv("INSTX_CONFIG")
 	if envPath != "" {
 		cachedConfigPath = envPath
 		return envPath
 	}
 
+	// SEARX_SPACE_AUTOSELECTOR_CONFIG wasn't changed alongside the project name:
+	//   SearxSpaceAutoselector -> Instx
+	// Display a deprecation notice if used.
+	envPath = os.Getenv("SEARX_SPACE_AUTOSELECTOR_CONFIG")
+	if envPath != "" {
+		log.Println("[Deprecation Notice] SEARX_SPACE_AUTOSELECTOR_CONFIG is now INSTX_CONFIG")
+		cachedConfigPath = envPath
+		return envPath
+	}
+
 	// Try hardcoded path
+
 	if runtime.GOOS == "windows" {
 		appData, err := os.UserConfigDir()
 		if err != nil {
