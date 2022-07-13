@@ -4,25 +4,34 @@ A client-side service that automatically updates the SearX(NG) instance you use 
 
 ## Installation
 
-### Linux
-1. Install [Golang](https://go.dev/)
-2. Build with `go build`
-3. Set `ExecStart` in `instx.service` to the instx binary location and copy it to `~/.config/systemd/`
-4. `systemctl --user daemon-reload`
-5. `systemctl --user enable instx`
-6. `systemctl --user start instx`
+### Requirements
+- [Golang](https://go.dev/)
+- [GNU Make](https://www.gnu.org/software/make/)
 
-### MacOS
-1. Install [Golang](https://go.dev/) (`brew install go`)
-2. Build with `go build`
-3. Replace `/path/to/instx` and `USER` in `usr.Njinx.instx.plist` with their correct values
-4. Copy `usr.Njinx.instx.plist` to `~/Library/LaunchAgents/`
-5. Enable it with `launchctl load -w ~/Library/LaunchAgents/usr.Njinx.instx.plist`
+#### Linux
+1. Build with `make`
+2. Set `ExecStart` in `instx.service` to the instx binary location and copy it to `~/.config/systemd/`
+3. `systemctl --user daemon-reload`
+4. `systemctl --user enable instx`
+5. `systemctl --user start instx`
 
-### Windows
-1. Install [Golang](https://go.dev/)
-2. Build with `go build`
-3. **TODO**
+#### MacOS
+1. Build with `make`
+2. Replace `/path/to/instx` and `USER` in `usr.Njinx.instx.plist` with their correct values
+3. Copy `usr.Njinx.instx.plist` to `~/Library/LaunchAgents/`
+4. Enable it with `launchctl load -w ~/Library/LaunchAgents/usr.Njinx.instx.plist`
+
+#### Windows
+1. Build with `make`
+2. **TODO**
+
+### Notes about Makefile
+The Makefile contains several build targets:
+- **default** / **build**: Builds for the default architecture
+- **build-{GOOS}-{GOARCH}**: Builds for predefined supported platforms
+    - Windows amd64 and i386
+    - Linux amd64 and i386
+    - MacOS amd64 and arm64
 
 ### Set as the default search engine
 1. Go to http://localhost:8080/getstarted
