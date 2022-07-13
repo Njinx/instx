@@ -293,3 +293,20 @@ func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *s
 		log.Fatal("Could not create HTTP server: ", err)
 	}
 }
+
+// Takes a url-decoded search query (?q=) containing a bang and resolves
+// it into a redirect-ready URL.
+func resolveDDGBang(query string) (string, error) {
+	bangId, bangSearch, err := extractDDGBang(query)
+	if err != nil {
+		return "", fmt.Errorf("could not parse bang: %s", err.Error())
+	}
+
+	bangSearch = urllib.QueryEscape(bangSearch)
+	bangUrl, exists := bangMap[bangId]
+	if !exists {
+		return "", fmt.Errorf("bang not found: \"%s\"", bangId)
+	}
+
+	return strings.Replace(bangUrl, "{{{s}}}", bangSearch, -1), nil
+}

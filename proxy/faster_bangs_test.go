@@ -60,3 +60,36 @@ func TestInitBangMap(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveDDGBang(t *testing.T) {
+	if err := initBangMap(); err != nil && !errors.Is(err, &ErrBangMapInitialized{}) {
+		t.Errorf("Could not initialize the DDG Bang map: %s\n", err.Error())
+	}
+
+	type expectedT struct {
+		url   string
+		isErr bool
+	}
+
+	tests := map[string]expectedT{
+		"!!g":                  {"https://www.google.com/search?q=", false},
+		"!!g  ":                {"https://www.google.com/search?q=", false},
+		"!!rsub test":          {"https://reddit.com/r/test", false},
+		"!!rsub test   ":       {"https://reddit.com/r/test", false},
+		"!!a /\\bedding/\\/\\": {"https://www.amazon.com/s/?tag=duc0c-20&url=search-alias%3Daps&field-keywords=%2F%5Cbedding%2F%5C%2F%5C", false},
+		"!!-_notvalid_-":       {"", true},
+		"  !!yt  ":             {"https://www.youtube.com/results?search_query=", false},
+		"  !!yt   funny      ": {"https://www.youtube.com/results?search_query=funny", false},
+	}
+
+	for input, expected := range tests {
+		givenURL, givenErr := resolveDDGBang(input)
+		if ((givenErr != nil) != expected.isErr) || (givenURL != expected.url) {
+			t.Errorf(
+				"resolveDDGBang(\"%s\"): expected = \"%s\", given = \"%s\"\n",
+				input,
+				expected.url,
+				givenURL)
+		}
+	}
+}

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	urllib "net/url"
 	"os"
-	"strings"
 	"time"
 
 	"gitlab.com/Njinx/instx/config"
@@ -33,27 +32,26 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// TODO: Restructure this control flow
 	if config.ParseConfig().Proxy.FasterDDGBangs {
 		encodedQuery, ok := req.URL.Query()["q"]
-
-		// If a search query wasn't found
-		if !ok && len(encodedQuery) > 0 {
-			log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
+		decodedQuery, err := urllib.QueryUnescape(encodedQuery[0])
+		if err != nil {
+			craftRegularUrl()
 		} else {
-			decodedQuery, err := urllib.QueryUnescape(encodedQuery[0])
-			if err != nil {
-				log.Println(err.Error())
-			}
+			// If a search query wasn't found
+			if !ok && len(encodedQuery) > 0 {
+				log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
+				craftRegularUrl()
+			} else if isDDGBang(decodedQuery) {
+				craftedUrl, err = resolveDDGBang(decodedQuery)
 
-			if isDDGBang(decodedQuery) {
-				bangId, bangSearch, err := extractDDGBang(decodedQuery)
+				// If we can't resolve the bang, log it and try to treat it as
+				// a non-bang. While this error is relatively harmless, an issue
+				// should still be filed as this is unintended behavior.
 				if err != nil {
-					log.Printf("Could not parse bang: %s\n", err.Error())
-				} else {
-					bangSearch = urllib.QueryEscape(bangSearch)
-
-					bangUrl := bangMap[bangId]
-					craftedUrl = strings.Replace(bangUrl, "{{{s}}}", bangSearch, -1)
+					log.Printf("Could not resolve DDG bang: %s\n", err)
+					craftRegularUrl()
 				}
 			} else {
 				craftRegularUrl()
