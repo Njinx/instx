@@ -35,6 +35,8 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 
 	if config.ParseConfig().Proxy.FasterDDGBangs {
 		encodedQuery, ok := req.URL.Query()["q"]
+
+		// If a search query wasn't found
 		if !ok && len(encodedQuery) > 0 {
 			log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
 		} else {

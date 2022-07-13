@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -122,10 +123,15 @@ func parsePreferences() {
 	preferencesData = params[0]
 }
 
-// [id]url
+// Contains the bang ID and bang URL in the form [id]url
 var bangMap map[string]string
 
+// Grab the bang list from DDG
 func initBangMap() error {
+	if len(bangMap) > 0 {
+		return errors.New("the bang map is likely already initialized (len > 0)")
+	}
+
 	const BANG_LIST_URL = "https://duckduckgo.com/bang.js"
 
 	resp, err := http.Get(BANG_LIST_URL)
@@ -148,8 +154,11 @@ func initBangMap() error {
 		return err
 	}
 
+	// As of 2022/07/12 there are ~13.5K bangs so capacity=2^13
+	// shouldn't require a realloc.
 	bangMap = make(map[string]string, 2<<13)
 	for _, bang := range bangArr {
+		// I know, strange JSON scheme...
 		id := string(bang.GetStringBytes("t"))
 		url := string(bang.GetStringBytes("u"))
 
@@ -185,6 +194,11 @@ type extractDDGBangReturn struct {
 	err    error
 }
 
+// 2K entries should be sufficent without killing memory.
+// NOTE: lru.Cache is not safe for concurrent access!!!
+var extractDDGBangReturnCache = lru.New(2 << 10)
+var extractDDGBangReturnCacheMutex sync.Mutex
+
 // Check if query is cached (and return it)
 func checkBangCache(query string) (extractDDGBangReturn, bool) {
 	extractDDGBangReturnCacheMutex.Lock()
@@ -198,16 +212,16 @@ func checkBangCache(query string) (extractDDGBangReturn, bool) {
 	return extractDDGBangReturn{}, false
 }
 
-// 2K entries should be sufficent without killing memory
-var extractDDGBangReturnCache = lru.New(2 << 10)
-var extractDDGBangReturnCacheMutex sync.Mutex
-
 var cachedExtractDDGBangRegexp = regexp.MustCompile(`^\s*!!(?P<id>\S+)(?P<search>.*)?$`)
 
 // Returns (bangID, bangURL, error)
 //   Ex: extractDDGBang("!!g dog food") -> ("g", "dog food", nil)
 // Expects a URL-decoded string
 func extractDDGBang(query string) (string, string, error) {
+
+	// redirectHandler() will call extractDDGBang() twice if a bang is found
+	// (1st occurence is in isDDGBang()) so it makes a lot of sense to LRU
+	// cache the results.
 	if bang, exists := checkBangCache(query); exists {
 		return bang.id, bang.search, bang.err
 	}
@@ -217,6 +231,9 @@ func extractDDGBang(query string) (string, string, error) {
 	searchIndex := cachedExtractDDGBangRegexp.SubexpIndex("search")
 
 	var ret extractDDGBangReturn
+
+	// For whatever reason SubexpIndex() is able to find group indexes
+	// without them existing in $matches, so the third check is necessary.
 	if idIndex == -1 ||
 		searchIndex == -1 ||
 		len(matches) < int(math.Max(float64(idIndex), float64(searchIndex))) {
