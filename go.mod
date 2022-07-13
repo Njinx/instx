@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-ping/ping v1.1.0
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/valyala/fastjson v1.6.3
 	gopkg.in/yaml.v3 v3.0.1
 )
