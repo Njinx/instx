@@ -125,6 +125,7 @@ func parsePreferences() {
 
 // Contains the bang ID and bang URL in the form [id]url
 var bangMap map[string]string
+var bangMapMutex sync.Mutex
 
 // Grab the bang list from DDG
 func initBangMap() error {
@@ -156,6 +157,7 @@ func initBangMap() error {
 
 	// As of 2022/07/12 there are ~13.5K bangs so capacity=2^13
 	// shouldn't require a realloc.
+	bangMapMutex.Lock()
 	bangMap = make(map[string]string, 2<<13)
 	for _, bang := range bangArr {
 		// I know, strange JSON scheme...
@@ -164,6 +166,7 @@ func initBangMap() error {
 
 		bangMap[id] = url
 	}
+	bangMapMutex.Unlock()
 
 	return nil
 }
