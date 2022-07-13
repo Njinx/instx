@@ -23,6 +23,7 @@ type Config struct {
 	Proxy           struct {
 		Port           int    `yaml:"port"`
 		PreferencesUrl string `yaml:"preferences_url"`
+		FasterDDGBangs bool   `yaml:"faster_ddg_bangs"`
 	} `yaml:"proxy"`
 	Updater struct {
 		UpdateInterval    int64    `yaml:"update_interval"`

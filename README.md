@@ -44,6 +44,7 @@ The default config file is located at `~/.config/instx.yaml` on MacOS/Linux and 
 |Yes|default_instance|Fallback instance|string|None|
 |Yes|proxy.port|Web server port|int|8080|
 |No|proxy.preferences_url|[Apply instance settings automatically](#apply-instance-settings-automatically)|string|None|
+|No|faster_ddg_bangs|If enabled, DuckDuckGo Bangs (!!...) will be resolved by InstX instead of having to go through InstX -> SearX -> DDG -> Website|bool|true|
 |Yes|updater.update_interval|How often all the instances are queried and analyzed (in minutes)|int64|180 (3 hours)|
 |No|updater.instance_blacklist|Instances to ignore. Note that this only compares the host as defined [here](https://pkg.go.dev/net/url#URL).|[]string|None|
 |Yes|updater.advanced.initial_resp_weight||float64|1.2|

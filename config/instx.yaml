@@ -5,6 +5,7 @@ default_instance:
 proxy:
   port: 8080
   preferences_url:
+  faster_ddg_bangs: true
 
 updater:
   update_interval: 180
