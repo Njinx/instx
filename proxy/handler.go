@@ -6,24 +6,59 @@ import (
 	"io"
 	"log"
 	"net/http"
+	urllib "net/url"
 	"os"
+	"strings"
 	"time"
+
+	"gitlab.com/Njinx/instx/config"
 )
 
 // Redirect the user to the current instance with their search query
 // and preferences URL.
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
-	url := getUrl()
-
 	var craftedUrl string
-	if len(preferencesData) > 0 {
-		craftedUrl = fmt.Sprintf(
-			"%s%s&preferences=%s",
-			url,
-			req.RequestURI,
-			preferencesData)
+
+	craftRegularUrl := func() {
+		url := getUrl()
+
+		if len(preferencesData) > 0 {
+			craftedUrl = fmt.Sprintf(
+				"%s%s&preferences=%s",
+				url,
+				req.RequestURI,
+				preferencesData)
+		} else {
+			craftedUrl = fmt.Sprintf("%s%s", url, req.RequestURI)
+		}
+	}
+
+	if config.ParseConfig().Proxy.FasterDDGBangs {
+		encodedQuery, ok := req.URL.Query()["q"]
+		if !ok && len(encodedQuery) > 0 {
+			log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
+		} else {
+			decodedQuery, err := urllib.QueryUnescape(encodedQuery[0])
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			if isDDGBang(decodedQuery) {
+				bangId, bangSearch, err := extractDDGBang(decodedQuery)
+				if err != nil {
+					log.Printf("Could not parse bang: %s\n", err.Error())
+				} else {
+					bangSearch = urllib.QueryEscape(bangSearch)
+
+					bangUrl := bangMap[bangId]
+					craftedUrl = strings.Replace(bangUrl, "{{{s}}}", bangSearch, -1)
+				}
+			} else {
+				craftRegularUrl()
+			}
+		}
 	} else {
-		craftedUrl = fmt.Sprintf("%s%s", url, req.RequestURI)
+		craftRegularUrl()
 	}
 
 	w.Header().Add("location", craftedUrl)

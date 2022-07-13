@@ -3,12 +3,18 @@ package proxy
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
+	"math"
 	"net/http"
 	urllib "net/url"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/golang/groupcache/lru"
+	"github.com/valyala/fastjson"
 	"gitlab.com/Njinx/instx/config"
 	"gitlab.com/Njinx/instx/resources"
 	"gitlab.com/Njinx/instx/updater"
@@ -116,11 +122,135 @@ func parsePreferences() {
 	preferencesData = params[0]
 }
 
+// [id]url
+var bangMap map[string]string
+
+func initBangMap() error {
+	const BANG_LIST_URL = "https://duckduckgo.com/bang.js"
+
+	resp, err := http.Get(BANG_LIST_URL)
+	if err != nil {
+		return err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var parser fastjson.Parser
+	jsonData, err := parser.Parse(string(body))
+	if err != nil {
+		return err
+	}
+
+	bangArr, err := jsonData.Array()
+	if err != nil {
+		return err
+	}
+
+	bangMap = make(map[string]string, 2<<13)
+	for _, bang := range bangArr {
+		id := string(bang.GetStringBytes("t"))
+		url := string(bang.GetStringBytes("u"))
+
+		bangMap[id] = url
+	}
+
+	return nil
+}
+
+// Returns true if query is a DuckDuckGo bang search (starts with !!).
+// Expects a URL-decoded string
+func isDDGBang(query string) bool {
+	bangId, _, err := extractDDGBang(query)
+	if err != nil {
+		return false
+	} else {
+		_, ok := bangMap[bangId]
+		return ok
+	}
+}
+
+type ErrNoRegexpMatches struct {
+	query string
+}
+
+func (e *ErrNoRegexpMatches) Error() string {
+	return fmt.Sprintf("Regexp query \"%s\" is not valid.", e.query)
+}
+
+type extractDDGBangReturn struct {
+	id     string
+	search string
+	err    error
+}
+
+// Check if query is cached (and return it)
+func checkBangCache(query string) (extractDDGBangReturn, bool) {
+	extractDDGBangReturnCacheMutex.Lock()
+	if val, isCached := extractDDGBangReturnCache.Get(query); isCached {
+		if bang, isBang := val.(extractDDGBangReturn); isBang {
+			extractDDGBangReturnCacheMutex.Unlock()
+			return bang, true
+		}
+	}
+	extractDDGBangReturnCacheMutex.Unlock()
+	return extractDDGBangReturn{}, false
+}
+
+// 2K entries should be sufficent without killing memory
+var extractDDGBangReturnCache = lru.New(2 << 10)
+var extractDDGBangReturnCacheMutex sync.Mutex
+
+var cachedExtractDDGBangRegexp = regexp.MustCompile(`^\s*!!(?P<id>\S+)(?P<search>.*)?$`)
+
+// Returns (bangID, bangURL, error)
+//   Ex: extractDDGBang("!!g dog food") -> ("g", "dog food", nil)
+// Expects a URL-decoded string
+func extractDDGBang(query string) (string, string, error) {
+	if bang, exists := checkBangCache(query); exists {
+		return bang.id, bang.search, bang.err
+	}
+
+	matches := cachedExtractDDGBangRegexp.FindStringSubmatch(query)
+	idIndex := cachedExtractDDGBangRegexp.SubexpIndex("id")
+	searchIndex := cachedExtractDDGBangRegexp.SubexpIndex("search")
+
+	var ret extractDDGBangReturn
+	if idIndex == -1 ||
+		searchIndex == -1 ||
+		len(matches) < int(math.Max(float64(idIndex), float64(searchIndex))) {
+
+		ret.id = ""
+		ret.search = ""
+		ret.err = &ErrNoRegexpMatches{query}
+	} else {
+		ret.id = matches[idIndex]
+		// TODO: Maybe incorporate the trim into the regexp?
+		ret.search = strings.TrimSpace(matches[searchIndex])
+		ret.err = nil
+	}
+
+	extractDDGBangReturnCacheMutex.Lock()
+	extractDDGBangReturnCache.Add(query, ret)
+	extractDDGBangReturnCacheMutex.Unlock()
+
+	return ret.id, ret.search, ret.err
+}
+
 func Run(updatedCanidatesLocal *updater.Canidates, updatedCanidatesMutexLocal *sync.Mutex) {
 	vfs = resources.New()
 
 	updatedCanidates = updatedCanidatesLocal
 	updatedCanidatesMutex = updatedCanidatesMutexLocal
+
+	if config.ParseConfig().Proxy.FasterDDGBangs {
+		if err := initBangMap(); err != nil {
+			log.Printf(
+				"Failed to initialize the DuckDuckGo Bang list: %s\n",
+				err.Error())
+		}
+	}
 
 	parsePreferences()
 
