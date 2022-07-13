@@ -1,11 +1,12 @@
 package proxy
 
 import (
+	"errors"
 	"testing"
 )
 
 func TestIsDDGBang(t *testing.T) {
-	if err := initBangMap(); err != nil {
+	if err := initBangMap(); err != nil && !errors.Is(err, &ErrBangMapInitialized{}) {
 		t.Errorf("Could not initialize the DDG Bang map: %s\n", err.Error())
 	}
 
@@ -33,7 +34,7 @@ func TestIsDDGBang(t *testing.T) {
 }
 
 func TestInitBangMap(t *testing.T) {
-	if err := initBangMap(); err != nil {
+	if err := initBangMap(); err != nil && !errors.Is(err, &ErrBangMapInitialized{}) {
 		t.Errorf("Could not initialize the DDG Bang map: %s\n", err.Error())
 	}
 

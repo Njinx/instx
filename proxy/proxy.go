@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -127,10 +126,16 @@ func parsePreferences() {
 var bangMap map[string]string
 var bangMapMutex sync.Mutex
 
+type ErrBangMapInitialized struct{}
+
+func (e *ErrBangMapInitialized) Error() string {
+	return "the bang map is likely already initialized (len > 0)"
+}
+
 // Grab the bang list from DDG
 func initBangMap() error {
 	if len(bangMap) > 0 {
-		return errors.New("the bang map is likely already initialized (len > 0)")
+		return &ErrBangMapInitialized{}
 	}
 
 	const BANG_LIST_URL = "https://duckduckgo.com/bang.js"
