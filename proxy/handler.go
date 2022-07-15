@@ -32,30 +32,9 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// TODO: Restructure this control flow
 	if config.ParseConfig().Proxy.FasterDDGBangs {
-		encodedQuery, ok := req.URL.Query()["q"]
-		decodedQuery, err := urllib.QueryUnescape(encodedQuery[0])
-		if err != nil {
+		if !tryDDGBang(req, &craftedUrl) {
 			craftRegularUrl()
-		} else {
-			// If a search query wasn't found
-			if !ok && len(encodedQuery) > 0 {
-				log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
-				craftRegularUrl()
-			} else if isDDGBang(decodedQuery) {
-				craftedUrl, err = resolveDDGBang(decodedQuery)
-
-				// If we can't resolve the bang, log it and try to treat it as
-				// a non-bang. While this error is relatively harmless, an issue
-				// should still be filed as this is unintended behavior.
-				if err != nil {
-					log.Printf("Could not resolve DDG bang: %s\n", err)
-					craftRegularUrl()
-				}
-			} else {
-				craftRegularUrl()
-			}
 		}
 	} else {
 		craftRegularUrl()
@@ -69,6 +48,42 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(302)
 
 	w.Write([]byte(fmt.Sprintf(REDIRECT_HTML_FMT, craftedUrl)))
+}
+
+// Attempts to treat the search query as a DDG bang.
+// On success: sets $url to the craftedUrl and returns true.
+// On failure: sets $url to nil and returns false.
+func tryDDGBang(req *http.Request, url *string) bool {
+	encodedQuery, ok := req.URL.Query()["q"]
+	decodedQuery, err := urllib.QueryUnescape(encodedQuery[0])
+
+	if err != nil {
+		*url = ""
+		return false
+	} else {
+		// If a search query wasn't found
+		if !ok && len(encodedQuery) > 0 {
+			log.Printf("Could not find \"q\" GET parameter in \"%s\"\n", req.URL)
+			*url = ""
+			return false
+		} else if isDDGBang(decodedQuery) {
+			*url, err = resolveDDGBang(decodedQuery)
+
+			// If we can't resolve the bang, log it and try to treat it as
+			// a non-bang. While this error is relatively harmless, an issue
+			// should still be filed as this is unintended behavior.
+			if err != nil {
+				log.Printf("Could not resolve DDG bang: %s\n", err)
+				*url = ""
+				return false
+			}
+		} else {
+			*url = ""
+			return false
+		}
+	}
+
+	return true
 }
 
 func openSearchXmlHandler(w http.ResponseWriter, req *http.Request) {
