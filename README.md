@@ -4,14 +4,34 @@ A client-side service that automatically updates the SearX(NG) instance you use 
 
 ## Installation
 
-### Compiling
-1. Build with `go get` and `go build`
-2. Set `ExecStart` in `instx.service` to the instx binary and copy it to `~/.config/systemd/`
+### Requirements
+- [Golang](https://go.dev/)
+- [GNU Make](https://www.gnu.org/software/make/)
 
-### Start automatically
-1. `systemctl --user daemon-reload`
-2. `systemctl --user enable instx`
-3. `systemctl --user start instx`
+#### Linux
+1. Build with `make`
+2. Set `ExecStart` in `instx.service` to the instx binary location and copy it to `~/.config/systemd/`
+3. `systemctl --user daemon-reload`
+4. `systemctl --user enable instx`
+5. `systemctl --user start instx`
+
+#### MacOS
+1. Build with `make`
+2. Replace `/path/to/instx` and `USER` in `usr.Njinx.instx.plist` with their correct values
+3. Copy `usr.Njinx.instx.plist` to `~/Library/LaunchAgents/`
+4. Enable it with `launchctl load -w ~/Library/LaunchAgents/usr.Njinx.instx.plist`
+
+#### Windows
+1. Build with `make`
+2. **TODO**
+
+### Notes about Makefile
+The Makefile contains several build targets:
+- **default** / **build**: Builds for the default architecture
+- **build-{GOOS}-{GOARCH}**: Builds for predefined supported platforms
+    - Windows amd64 and i386
+    - Linux amd64 and i386
+    - MacOS amd64 and arm64
 
 ### Set as the default search engine
 1. Go to http://localhost:8080/getstarted
@@ -26,7 +46,7 @@ InstX comes bundled with a utility called instxctl that can do things such as qu
 To access instxctl simply make a copy or symbolic link of the instx binary and rename it to something that includes the string "instxctl". This new binary can now be run via the command line in instxctl mode.
 
 ## Configuration
-The default config file is located at `~/.config/instx.yaml` on Linux and `%appdata%/instx/instx.yaml` on Windows but can be overriden by setting `$SEARX_SPACE_AUTOSELECTOR_CONFIG`.
+The default config file is located at `~/.config/instx.yaml` on MacOS/Linux and `%appdata%/instx/instx.yaml` on Windows. This can be overriden by setting `$INSTX_CONFIG`.
 
 |Required|YAML Key|Description|Go Data Type|Default Value|
 |---|---|---|---|---|
