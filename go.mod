@@ -9,6 +9,16 @@ require (
 )
 
 require (
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
+	github.com/mattn/go-zglob v0.0.3 // indirect
+	github.com/mh-cbon/go-msi v0.0.0-20170907180328-7f05345d485b // indirect
+	github.com/mh-cbon/stringexec v0.0.0-20160727103857-5a080a1a4118 // indirect
+	github.com/russross/blackfriday/v2 v2.0.1 // indirect
+	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	github.com/urfave/cli v1.22.9 // indirect
 	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87 // indirect
 	golang.org/x/sys v0.0.0-20220519141025-dcacdad47464 // indirect
+	golang.org/x/text v0.3.7 // indirect
 )

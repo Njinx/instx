@@ -1,0 +1,41 @@
+{
+  "product": "instx",
+  "company": "Njinx",
+  "license": "MIT",
+  "upgrade-code": "",
+  "files": {
+    "guid": "",
+    "items": [
+      "bin/instx.exe"
+    ]
+  },
+  "shortcuts": {
+    "guid": "",
+    "items": [
+      {
+        "name": "instx",
+        "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
+        "target": "C:\\Program Files (x86)\\instx\\instx.exe",
+        "wdir": "C:\\Program Files (x86)\\instx",
+        "arguments": "",
+        "icon": ""
+      }
+    ]
+  },
+  "hooks": [
+    {
+        "when": "install",
+        "command": "schtasks.exe /create /f /sc ONLOGON /tn 'instx' /tr 'C:\\Program Files (x86)\\instx\\instx.exe'"
+    },
+    {
+        "when": "uninstall",
+        "command": "schtasks.exe /delete /tn 'instx' /f"
+    }
+  ],
+  "choco": {
+    "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
+    "project-url": "https://gitlab.com/Njinx/instx",
+    "tags": "instx searx searxng golang",
+    "license-url": "https://gitlab.com/Njinx/instx/-/blob/main/LICENSE"
+  }
+}
