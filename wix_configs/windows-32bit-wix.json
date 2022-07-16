@@ -2,40 +2,44 @@
   "product": "instx",
   "company": "Njinx",
   "license": "LICENSE",
-  "upgrade-code": "",
+  "upgrade-code": "2d42caf5-abb3-4698-aa69-707c14329e39",
   "files": {
-    "guid": "",
+    "guid": "f93011e4-0b88-4c2e-a913-b3f7b3dbb3ba",
     "items": [
-      "bin/instx.exe"
+      "bin/instx-windows-386.exe"
     ]
   },
-  "shortcuts": {
+  "env": {
     "guid": "",
+    "vars": null
+  },
+  "shortcuts": {
+    "guid": "01bc4ec3-bd97-48b4-83f8-12fbc4663978",
     "items": [
       {
         "name": "instx",
         "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
-        "target": "C:\\Program Files (x86)\\instx\\instx.exe",
+        "target": "C:\\Program Files (x86)\\instx\\instx-windows-386.exe",
         "wdir": "C:\\Program Files (x86)\\instx",
         "arguments": "",
         "icon": ""
       }
     ]
   },
-  "hooks": [
-    {
-        "when": "install",
-        "command": "schtasks.exe /create /f /sc ONLOGON /tn 'instx' /tr 'C:\\Program Files (x86)\\instx\\instx.exe'"
-    },
-    {
-        "when": "uninstall",
-        "command": "schtasks.exe /delete /tn 'instx' /f"
-    }
-  ],
   "choco": {
     "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
     "project-url": "https://gitlab.com/Njinx/instx",
     "tags": "instx searx searxng golang",
     "license-url": "https://gitlab.com/Njinx/instx/-/blob/main/LICENSE"
-  }
+  },
+  "hooks": [
+    {
+      "command": "schtasks.exe /create /f /sc ONLOGON /tn 'instx' /tr 'C:\\Program Files (x86)\\instx\\instx-windows-386.exe'",
+      "when": "install"
+    },
+    {
+      "command": "schtasks.exe /delete /tn 'instx' /f",
+      "when": "uninstall"
+    }
+  ]
 }

@@ -2,40 +2,44 @@
   "product": "instx",
   "company": "Njinx",
   "license": "LICENSE",
-  "upgrade-code": "",
+  "upgrade-code": "01e90257-b7bc-47fc-82d3-4013a8f1fc48",
   "files": {
-    "guid": "",
+    "guid": "ccd55206-8a7f-44a4-9a82-fb72c7e8aaf0",
     "items": [
-      "bin/instx.exe"
+      "bin/instx-windows-amd64.exe"
     ]
   },
-  "shortcuts": {
+  "env": {
     "guid": "",
+    "vars": null
+  },
+  "shortcuts": {
+    "guid": "c4116a7c-6717-4443-a3d1-2bd587529c00",
     "items": [
       {
         "name": "instx",
         "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
-        "target": "C:\\Program Files\\instx\\instx.exe",
+        "target": "C:\\Program Files\\instx\\instx-windows-amd64.exe",
         "wdir": "INSTALLDIR",
         "arguments": "",
         "icon": ""
       }
     ]
   },
-  "hooks": [
-    {
-        "when": "install",
-        "command": "schtasks.exe /create /f /sc ONLOGON /tn 'instx' /tr 'C:\\Program Files\\instx\\instx.exe'"
-    },
-    {
-        "when": "uninstall",
-        "command": "schtasks.exe /delete /tn 'instx' /f"
-    }
-  ],
   "choco": {
     "description": "Client-side service that automatically updates the searx(ng) instance you use to search based on the best one from https://searx.space",
     "project-url": "https://gitlab.com/Njinx/instx",
     "tags": "instx searx searxng golang",
     "license-url": "https://gitlab.com/Njinx/instx/-/blob/main/LICENSE"
-  }
+  },
+  "hooks": [
+    {
+      "command": "schtasks.exe /create /f /sc ONLOGON /tn 'instx' /tr 'C:\\Program Files\\instx\\instx-windows-amd64.exe'",
+      "when": "install"
+    },
+    {
+      "command": "schtasks.exe /delete /tn 'instx' /f",
+      "when": "uninstall"
+    }
+  ]
 }
